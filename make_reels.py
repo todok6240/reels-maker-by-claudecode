@@ -12,6 +12,7 @@ import base64
 import anthropic
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+from database import init_db, save_restaurant, save_reel, save_captions
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from moviepy import ImageSequenceClip, AudioFileClip
 import numpy as np
@@ -348,12 +349,20 @@ def make_reels(name: str, location: str, price: str, review: str,
 
     print(f"\n✅ 완료! 저장 위치: {output_path}")
 
+    # DB 저장
+    restaurant_id = save_restaurant(name, location, price, review)
+    reel_id = save_reel(restaurant_id, output_path, len(photos))
+    save_captions(reel_id, photos, captions)
+    print("💾 DB 저장 완료")
+
 
 if __name__ == "__main__":
     print("=" * 40)
     print("    맛집 릴스 자동 생성기")
     print("=" * 40)
     print()
+
+    init_db()
 
     # 사진 불러오기
     photos = get_photos()
