@@ -1,0 +1,9 @@
+bind = "127.0.0.1:5000"
+workers = 2
+worker_class = "gthread"
+threads = 2
+timeout = 300        # 영상 생성이 오래 걸릴 수 있으므로 5분
+keepalive = 5
+accesslog = "/var/log/rsmaker/access.log"
+errorlog = "/var/log/rsmaker/error.log"
+loglevel = "info"
