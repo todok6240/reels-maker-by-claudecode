@@ -19,4 +19,6 @@ jobs:
             git pull origin master
             venv/bin/pip install -r requirements.txt --quiet
             systemctl restart rsmaker
+            cp /root/reels-maker-by-claudecode/nginx.conf /etc/nginx/sites-available/rsmaker
+            systemctl reload nginx
             echo "✅ 배포 완료"
