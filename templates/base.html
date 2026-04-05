@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReelsShortsMaker</title>
+  <title>rsMaker</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_ver }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_ver }}">
@@ -18,7 +18,7 @@
 <body>
   <nav>
     <div class="nav-left">
-      <a href="/" class="nav-logo">🎬 ReelsShortsMaker</a>
+      <a href="/" class="nav-logo">🎬 rsMaker</a>
       {% if current_user and current_user.type == 'google' %}
       <a href="/history" class="nav-links-item" data-i18n="nav.history">과거 생성 히스토리</a>
       {% endif %}
