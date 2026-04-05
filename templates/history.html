@@ -12,6 +12,7 @@
           <th>맛집 이름</th>
           <th>위치</th>
           <th>가격대</th>
+          <th>세션</th>
           <th>생성일</th>
         </tr>
       </thead>
@@ -22,6 +23,7 @@
           <td>{{ r.name }}</td>
           <td>{{ r.location }}</td>
           <td>{{ r.price }}</td>
+          <td class="session-id">{{ r.session_id[:8] }}...</td>
           <td>{{ r.created_at }}</td>
         </tr>
         {% endfor %}

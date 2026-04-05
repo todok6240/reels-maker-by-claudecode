@@ -1,6 +1,9 @@
 # 환경변수 (API 키)
 .env
 
+# BGM 파일
+bgm/
+
 # 가상환경
 venv/
 

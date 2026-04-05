@@ -21,11 +21,12 @@ def init_db():
     conn = get_conn()
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS restaurants (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            name      TEXT NOT NULL,
-            location  TEXT NOT NULL,
-            price     TEXT,
-            review    TEXT,
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            name       TEXT NOT NULL,
+            location   TEXT NOT NULL,
+            price      TEXT,
+            review     TEXT,
             created_at TEXT DEFAULT (datetime('now', 'localtime'))
         );
 
@@ -51,12 +52,12 @@ def init_db():
     conn.close()
 
 
-def save_restaurant(name: str, location: str, price: str, review: str) -> int:
+def save_restaurant(session_id: str, name: str, location: str, price: str, review: str) -> int:
     """맛집 정보 저장 후 ID 반환"""
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO restaurants (name, location, price, review) VALUES (?, ?, ?, ?)",
-        (name, location, price, review)
+        "INSERT INTO restaurants (session_id, name, location, price, review) VALUES (?, ?, ?, ?, ?)",
+        (session_id, name, location, price, review)
     )
     rid = cur.lastrowid
     conn.commit()
@@ -90,11 +91,17 @@ def save_captions(reel_id: int, photos: list, captions: list):
     conn.close()
 
 
-def list_restaurants():
-    """저장된 맛집 목록 출력"""
+def list_restaurants(session_id: str = None):
+    """저장된 맛집 목록 반환 (session_id 있으면 해당 세션만)"""
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT id, name, location, price, created_at FROM restaurants ORDER BY created_at DESC"
-    ).fetchall()
+    if session_id:
+        rows = conn.execute(
+            "SELECT id, session_id, name, location, price, created_at FROM restaurants WHERE session_id = ? ORDER BY created_at DESC",
+            (session_id,)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT id, session_id, name, location, price, created_at FROM restaurants ORDER BY created_at DESC"
+        ).fetchall()
     conn.close()
     return rows

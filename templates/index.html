@@ -2,11 +2,51 @@
 {% block content %}
 
 <div class="container">
-  <!-- Step 1: 사진 확인 & 분석 -->
+
+  <!-- 이어서 진행 배너 -->
+  <div id="resume-banner" class="banner-resume hidden">
+    <span>이전 작업 파일이 있어요. 이어서 진행할까요?</span>
+    <div class="banner-actions">
+      <button class="btn btn-outline" id="btn-resume">이어서 진행</button>
+      <button class="btn btn-danger" id="btn-reset">새 작업 시작</button>
+    </div>
+  </div>
+
+  <!-- Step 1: 사진 업로드 & 분석 -->
   <section class="card" id="step1">
-    <h2>1단계 — 사진 분석</h2>
+    <h2>1단계 — 사진 업로드 & 분석</h2>
+
+    <div id="drop-zone">
+      <input type="file" id="file-input" multiple accept="image/*,video/*" hidden>
+      <div id="drop-inner" onclick="document.getElementById('file-input').click()">
+        <div class="drop-icon">📷</div>
+        <p class="drop-title">사진을 드래그하거나 클릭해서 업로드</p>
+        <p class="drop-sub">JPG, PNG, MP4, MOV 여러 파일 가능</p>
+      </div>
+    </div>
+
+    <div id="upload-progress" class="hidden">
+      <div class="progress-bar"><div id="upload-fill"></div></div>
+      <p id="upload-msg"></p>
+    </div>
+
     <div id="photo-list" class="photo-grid"></div>
-    <button class="btn btn-primary" id="btn-analyze">Claude로 분석 시작</button>
+    <button class="btn btn-primary" id="btn-next" disabled>다음 단계 →</button>
+  </section>
+
+  <!-- Step 1.5: 사진 순서 조정 -->
+  <section class="card hidden" id="step1-5">
+    <h2>1.5단계 — 사진 순서 조정</h2>
+    <p class="step-desc">드래그로 순서를 바꾸거나 삭제할 수 있어요. 추가 사진은 오른쪽 끝에 붙어요.</p>
+    <div id="sort-zone" class="sort-zone"></div>
+    <div class="step-actions">
+      <label class="btn btn-outline" id="btn-add-more">
+        + 사진 추가
+        <input type="file" id="file-input-more" multiple accept="image/*,video/*" hidden>
+      </label>
+      <button class="btn btn-outline" id="btn-sort-time">🕐 시간순 정렬</button>
+      <button class="btn btn-primary" id="btn-analyze">Claude로 분석 시작</button>
+    </div>
   </section>
 
   <!-- Step 2: 분석 결과 & 맛집 정보 입력 -->

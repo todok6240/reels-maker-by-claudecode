@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from database import init_db, save_restaurant, save_reel, save_captions
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from moviepy import ImageSequenceClip, AudioFileClip
+from moviepy import ImageSequenceClip, AudioFileClip, VideoFileClip, ImageClip, CompositeVideoClip, concatenate_videoclips
 import numpy as np
 
 # ── 설정 ──────────────────────────────────────────────
@@ -292,6 +292,37 @@ def draw_location_badge(img: Image.Image, name: str, location: str) -> Image.Ima
     return img.convert("RGB")
 
 
+VIDEO_EXTS = {".mp4", ".mov", ".avi", ".m4v", ".mkv", ".3gp"}
+
+def is_video(path: str) -> bool:
+    return os.path.splitext(path)[1].lower() in VIDEO_EXTS
+
+
+def make_overlay(w: int, h: int, caption: str, name: str, location: str) -> Image.Image:
+    """투명 배경에 자막 + 뱃지를 그린 RGBA 오버레이 이미지 반환"""
+    base = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    base = draw_caption(base, caption)
+    base = draw_location_badge(base, name, location)
+    return base.convert("RGBA")
+
+
+def build_video_clip(video_path: str, caption: str, name: str, location: str) -> CompositeVideoClip:
+    """동영상 클립에 자막+뱃지 오버레이를 합성"""
+    clip = VideoFileClip(video_path)
+
+    # 릴스 해상도로 크롭/리사이즈
+    scale = max(REELS_W / clip.w, REELS_H / clip.h)
+    clip = clip.resized(scale)
+    x = (clip.w - REELS_W) // 2
+    y = (clip.h - REELS_H) // 2
+    clip = clip.cropped(x1=x, y1=y, x2=x + REELS_W, y2=y + REELS_H)
+
+    # 오버레이 합성
+    overlay_img = make_overlay(REELS_W, REELS_H, caption, name, location)
+    overlay = ImageClip(np.array(overlay_img)).with_duration(clip.duration)
+    return CompositeVideoClip([clip, overlay])
+
+
 def get_photos() -> list[str]:
     exts = ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG")
     photos = []
@@ -302,7 +333,8 @@ def get_photos() -> list[str]:
 
 
 def make_reels(name: str, location: str, price: str, review: str,
-               analysis: str, photos: list[str], captions: list[str] = None):
+               analysis: str, photos: list[str], captions: list[str] = None,
+               output_dir: str = None):
     if captions is None:
         print("✍️  자막 생성 중...")
         captions = generate_captions(name, location, price, review, analysis, photos)
@@ -321,17 +353,23 @@ def make_reels(name: str, location: str, price: str, review: str,
     fps = 24
     hold_frames = int(PHOTO_DURATION * fps)
 
-    for photo_path, caption in zip(photos, captions):
-        img = ImageOps.exif_transpose(Image.open(photo_path))
-        img = fit_image(img, REELS_W, REELS_H)
-        img = draw_caption(img, caption)
-        img = draw_location_badge(img, name, location)
-        frame = np.array(img)
-        for _ in range(hold_frames):
-            frames.append(frame)
+    # 사진/동영상 혼합 처리
+    segments = []
+    for media_path, caption in zip(photos, captions):
+        if is_video(media_path):
+            seg = build_video_clip(media_path, caption, name, location)
+            segments.append(seg)
+        else:
+            img = ImageOps.exif_transpose(Image.open(media_path))
+            img = fit_image(img, REELS_W, REELS_H)
+            img = draw_caption(img, caption)
+            img = draw_location_badge(img, name, location)
+            frame_arr = np.array(img)
+            seg = ImageSequenceClip([frame_arr] * hold_frames, fps=fps)
+            segments.append(seg)
 
     print("🎬 영상 생성 중...")
-    clip = ImageSequenceClip(frames, fps=fps)
+    clip = concatenate_videoclips(segments, method="compose")
     total_duration = clip.duration
 
     bgm_files = glob.glob(os.path.join(BGM_DIR, "*.mp3"))
@@ -347,17 +385,20 @@ def make_reels(name: str, location: str, price: str, review: str,
         clip = clip.with_audio(audio)
 
     safe_name = name.replace(" ", "_")
-    output_path = os.path.join(OUTPUT_DIR, f"{safe_name}_reels.mp4")
+    out_dir = output_dir if output_dir else OUTPUT_DIR
+    os.makedirs(out_dir, exist_ok=True)
+    output_path = os.path.join(out_dir, f"{safe_name}_reels.mp4")
     clip.write_videofile(output_path, fps=fps, codec="libx264", audio_codec="aac",
                          ffmpeg_params=["-crf", "18", "-preset", "slow"], logger=None)
 
     print(f"\n✅ 완료! 저장 위치: {output_path}")
 
-    # DB 저장
-    restaurant_id = save_restaurant(name, location, price, review)
-    reel_id = save_reel(restaurant_id, output_path, len(photos))
-    save_captions(reel_id, photos, captions)
-    print("💾 DB 저장 완료")
+    # CLI 실행 시에만 DB 직접 저장 (웹은 app.py에서 처리)
+    if output_dir is None:
+        restaurant_id = save_restaurant("cli", name, location, price, review)
+        reel_id = save_reel(restaurant_id, output_path, len(photos))
+        save_captions(reel_id, photos, captions)
+        print("💾 DB 저장 완료")
 
 
 if __name__ == "__main__":

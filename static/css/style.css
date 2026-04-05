@@ -36,6 +36,161 @@ nav {
 .card h2 { font-size: 1.1rem; margin-bottom: 20px; color: #1a1a1a; }
 .hidden { display: none; }
 
+/* Resume banner */
+.banner-resume {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: #555;
+}
+.banner-actions { display: flex; gap: 10px; }
+.btn-danger {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #e63946;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-danger:hover { opacity: 0.85; }
+
+/* Drop zone */
+#drop-zone {
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 20px;
+}
+#drop-zone:hover, #drop-zone.drag-over {
+  border-color: #e63946;
+  background: #fff5f5;
+}
+.drop-icon { font-size: 2rem; margin-bottom: 10px; }
+.drop-title { font-size: 0.95rem; color: #333; font-weight: 500; margin-bottom: 4px; }
+.drop-sub { font-size: 0.8rem; color: #aaa; }
+
+#upload-progress { margin-bottom: 16px; }
+#upload-fill {
+  height: 100%;
+  background: #e63946;
+  width: 0%;
+  transition: width 0.3s;
+}
+#upload-msg { font-size: 0.85rem; color: #666; margin-top: 6px; }
+
+/* Sort zone */
+.sort-zone {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 12px 4px 16px;
+  margin-bottom: 16px;
+  min-height: 140px;
+  align-items: flex-start;
+}
+.sort-zone::-webkit-scrollbar { height: 6px; }
+.sort-zone::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 4px; }
+.sort-zone::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+.sort-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 100px;
+  cursor: grab;
+  border-radius: 8px;
+  overflow: visible;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+.sort-item.dragging { opacity: 0.3; cursor: grabbing; }
+
+.sort-placeholder {
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px dashed #e63946;
+  background: #fff5f5;
+  box-sizing: border-box;
+}
+
+.sort-item img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  pointer-events: none;
+}
+.sort-item .sort-num {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.sort-item .video-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 1.2rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.sort-item .btn-delete {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e63946;
+  color: #fff;
+  border: none;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.step-desc { font-size: 0.85rem; color: #888; margin-bottom: 16px; }
+.step-actions { display: flex; gap: 12px; align-items: center; }
+.btn-outline {
+  padding: 11px 24px;
+  border-radius: 8px;
+  border: 1.5px solid #ddd;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: border-color 0.15s;
+}
+.btn-outline:hover { border-color: #e63946; color: #e63946; }
+
 /* Photo grid */
 .photo-grid {
   display: flex;
@@ -145,4 +300,5 @@ nav {
 .history-table th { text-align: left; padding: 10px; color: #999; border-bottom: 1px solid #eee; font-weight: 500; }
 .history-table td { padding: 10px; border-bottom: 1px solid #f5f5f5; color: #333; }
 .history-table tr:hover td { background: #fafafa; }
+.session-id { font-family: monospace; font-size: 0.8rem; color: #aaa; }
 .empty { color: #aaa; text-align: center; padding: 40px 0; }
