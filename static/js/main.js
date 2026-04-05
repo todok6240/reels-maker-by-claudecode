@@ -2,20 +2,111 @@ let analysisData = "";
 let photosData = [];
 let dragSrc = null;
 let placeholder = null;
+let contentType = "food";
+let step1Locked = false;
+
+function lockStep1() {
+  step1Locked = true;
+  document.getElementById("btn-clear-all").style.display = "none";
+  document.getElementById("btn-next").style.display = "none";
+  document.getElementById("drop-zone").classList.add("locked");
+  updatePhotoTags();
+}
+
+function unlockStep1() {
+  step1Locked = false;
+  document.getElementById("btn-next").style.display = "";
+  document.getElementById("drop-zone").classList.remove("locked");
+  updatePhotoTags();
+}
+
+// ── 스텝 네비게이션 ───────────────────────────────────
+const STEP_IDS = ["step1", "step1-5", "step2", "step3", "step4"];
+let maxStepReached = 0;
+
+function updateStepNav() {
+  const navItems = document.querySelectorAll(".step-nav-item");
+  const scrollY = window.scrollY + window.innerHeight / 2;
+
+  let currentIdx = 0;
+  STEP_IDS.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el || el.classList.contains("hidden")) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    if (top <= scrollY) currentIdx = i;
+  });
+
+  maxStepReached = Math.max(maxStepReached, currentIdx);
+
+  navItems.forEach((item, i) => {
+    const targetId = item.dataset.target;
+    const el = document.getElementById(targetId);
+    const visible = el && !el.classList.contains("hidden");
+    item.classList.remove("is-active", "is-done");
+    if (!visible) return;
+    if (i < maxStepReached) item.classList.add("is-done");
+    else if (i === maxStepReached) item.classList.add("is-active");
+  });
+}
+
+document.querySelectorAll(".step-nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    const el = document.getElementById(item.dataset.target);
+    if (el && !el.classList.contains("hidden")) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+});
+
+window.addEventListener("scroll", updateStepNav);
+updateStepNav();
+
+// ── 언어 변경 시 동적 컨텐츠 재적용 ─────────────────
+window.addEventListener("langchange", () => {
+  applyContentType(contentType);
+  const sortBtn = document.getElementById("btn-sort-time");
+  if (sortBtn && !sortBtn.disabled) sortBtn.textContent = t("js.sort_time");
+});
+
+// ── 콘텐츠 유형 설정 ─────────────────────────────────
+const CONTENT_TYPE_SHOW_PRICE = {
+  food: true, travel: true, product: true, fitness: true, vlog: false
+};
+
+document.querySelectorAll(".type-card").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".type-card").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    contentType = btn.dataset.type;
+    applyContentType(contentType);
+  });
+});
+
+function applyContentType(type) {
+  document.getElementById("label-name").textContent     = t(`ct.${type}.name`);
+  document.getElementById("label-location").textContent = t(`ct.${type}.location`);
+  document.getElementById("label-price").textContent    = t(`ct.${type}.price`);
+  document.getElementById("label-review").textContent   = t(`ct.${type}.review`);
+  document.getElementById("name").placeholder           = t(`ct.${type}.ph.name`);
+  document.getElementById("location").placeholder      = t(`ct.${type}.ph.location`);
+  document.getElementById("price").placeholder         = t(`ct.${type}.ph.price`);
+  document.getElementById("review").placeholder        = t(`ct.${type}.ph.review`);
+  document.getElementById("group-price").style.display = CONTENT_TYPE_SHOW_PRICE[type] ? "" : "none";
+}
 
 // ── 업로드 ────────────────────────────────────────────
 
 const dropZone   = document.getElementById("drop-zone");
 const fileInput  = document.getElementById("file-input");
 
-dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragover", e => { if (step1Locked) return; e.preventDefault(); dropZone.classList.add("drag-over"); });
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
-dropZone.addEventListener("drop", e => { e.preventDefault(); dropZone.classList.remove("drag-over"); uploadFiles(e.dataTransfer.files); });
-fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
+dropZone.addEventListener("drop", e => { if (step1Locked) return; e.preventDefault(); dropZone.classList.remove("drag-over"); uploadFiles(e.dataTransfer.files); });
+fileInput.addEventListener("change", () => { if (step1Locked) return; uploadFiles(fileInput.files); });
 
 async function uploadFiles(files) {
   if (!files.length) return;
-  showUploadProgress(`${files.length}장 업로드 중...`, 30);
+  showUploadProgress(t("js.uploading", files.length), 30);
 
   const formData = new FormData();
   for (const f of files) formData.append("photos", f);
@@ -23,7 +114,7 @@ async function uploadFiles(files) {
   const res  = await fetch("/api/upload", { method: "POST", body: formData });
   const data = await res.json();
 
-  showUploadProgress(`✅ ${data.count}장 업로드 완료`, 100);
+  showUploadProgress(t("js.uploaded", data.count), 100);
   await loadPhotos();
   document.getElementById("btn-next").disabled = false;
 }
@@ -39,22 +130,21 @@ function showUploadProgress(msg, pct) {
 async function loadPhotos() {
   const res = await fetch("/api/photos");
   photosData = await res.json();
-  const grid = document.getElementById("photo-list");
-  grid.innerHTML = photosData.map(p => `<span class="photo-tag">${p}</span>`).join("");
   if (photosData.length > 0) document.getElementById("btn-next").disabled = false;
+  updatePhotoTags();
   renderSortZone();
 }
 
 // ── 다음 단계 버튼 ────────────────────────────────────
 
 document.getElementById("btn-next").addEventListener("click", () => {
+  lockStep1();
   document.getElementById("step1-5").classList.remove("hidden");
-  document.getElementById("step1-5").scrollIntoView({ behavior: "smooth" });
+  document.getElementById("step1-5").scrollIntoView({ behavior: "smooth" }); updateStepNav();
 });
 
 // ── 정렬 존 렌더링 ────────────────────────────────────
 
-// sort-zone 전체에서 dragover → placeholder 위치 실시간 이동
 document.getElementById("sort-zone").addEventListener("dragover", e => {
   e.preventDefault();
   if (!dragSrc || !placeholder) return;
@@ -102,10 +192,9 @@ function makeSortItem(name, num) {
     <img src="${thumbSrc}" alt="${name}">
     ${isVideo(name) ? '<div class="video-badge">▶</div>' : ""}
     <span class="sort-num">${num}</span>
-    <button class="btn-delete" title="삭제">✕</button>
+    <button class="btn-delete" title="✕">✕</button>
   `;
 
-  // 삭제
   div.querySelector(".btn-delete").addEventListener("click", async () => {
     await fetch("/api/photos/delete", {
       method: "POST",
@@ -117,12 +206,10 @@ function makeSortItem(name, num) {
     updatePhotoTags();
   });
 
-  // 드래그
   div.addEventListener("dragstart", e => {
     dragSrc = div;
     e.dataTransfer.effectAllowed = "move";
 
-    // placeholder 생성 (드래그 중 빈 자리 표시)
     placeholder = document.createElement("div");
     placeholder.className = "sort-placeholder";
     placeholder.style.width  = div.offsetWidth  + "px";
@@ -154,14 +241,41 @@ function updateOrderFromDOM() {
 
 function updatePhotoTags() {
   document.getElementById("photo-list").innerHTML =
-    photosData.map(p => `<span class="photo-tag">${p}</span>`).join("");
+    photosData.map(p => `
+      <span class="photo-tag">
+        ${p}
+        ${step1Locked ? "" : `<button class="photo-tag-del" data-name="${p}" title="✕">✕</button>`}
+      </span>
+    `).join("");
+
+  if (!step1Locked) {
+    document.querySelectorAll(".photo-tag-del").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.name;
+        await fetch("/api/photos/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: name })
+        });
+        photosData = photosData.filter(p => p !== name);
+        updatePhotoTags();
+        renderSortZone();
+        if (photosData.length === 0) {
+          document.getElementById("btn-next").disabled = true;
+          document.getElementById("btn-clear-all").style.display = "none";
+        }
+      });
+    });
+  }
+
+  document.getElementById("btn-clear-all").style.display = (!step1Locked && photosData.length > 0) ? "" : "none";
 }
 
 // ── 사진 추가 (오른쪽 끝) ─────────────────────────────
 
 document.getElementById("file-input-more").addEventListener("change", async function () {
   if (!this.files.length) return;
-  showUploadProgress(`${this.files.length}장 추가 중...`, 30);
+  showUploadProgress(t("js.adding", this.files.length), 30);
 
   const formData = new FormData();
   for (const f of this.files) formData.append("photos", f);
@@ -169,9 +283,8 @@ document.getElementById("file-input-more").addEventListener("change", async func
   const res  = await fetch("/api/upload", { method: "POST", body: formData });
   const data = await res.json();
 
-  showUploadProgress(`✅ ${data.count}장 추가 완료`, 100);
+  showUploadProgress(t("js.added", data.count), 100);
 
-  // 기존 목록에 없는 것만 오른쪽 끝에 추가
   const zone = document.getElementById("sort-zone");
   data.uploaded.forEach(name => {
     if (!photosData.includes(name)) {
@@ -188,7 +301,7 @@ document.getElementById("file-input-more").addEventListener("change", async func
 document.getElementById("btn-sort-time").addEventListener("click", async () => {
   const btn = document.getElementById("btn-sort-time");
   btn.disabled = true;
-  btn.textContent = "정렬 중...";
+  btn.textContent = t("js.sorting");
 
   const res = await fetch("/api/photos/sort-by-time");
   const sorted = await res.json();
@@ -198,58 +311,64 @@ document.getElementById("btn-sort-time").addEventListener("click", async () => {
   updatePhotoTags();
 
   btn.disabled = false;
-  btn.textContent = "🕐 시간순 정렬";
+  btn.textContent = t("js.sort_time");
 });
 
-// ── 분석 ─────────────────────────────────────────────
+// ── 1.5단계 → 2단계 이동 ─────────────────────────────
 
-document.getElementById("btn-analyze").addEventListener("click", async () => {
-  const btn = document.getElementById("btn-analyze");
-  btn.disabled = true;
-  btn.textContent = "분석 중...";
-
-  const res  = await fetch("/api/analyze", { method: "POST" });
-  const data = await res.json();
-  if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = "Claude로 분석 시작"; return; }
-
-  analysisData = data.analysis;
-  document.getElementById("analysis-result").textContent = data.analysis;
+document.getElementById("btn-to-step2").addEventListener("click", () => {
   document.getElementById("step2").classList.remove("hidden");
-  document.getElementById("step2").scrollIntoView({ behavior: "smooth" });
-  btn.textContent = "분석 완료";
+  document.getElementById("step2").scrollIntoView({ behavior: "smooth" }); updateStepNav();
 });
 
-// ── 자막 생성 ─────────────────────────────────────────
+// ── 자막 생성 (분석 → 생성 통합) ────────────────────
 
 document.getElementById("btn-generate").addEventListener("click", async () => {
   const btn = document.getElementById("btn-generate");
   btn.disabled = true;
-  btn.textContent = "자막 생성 중...";
 
-  const res  = await fetch("/api/generate", {
+  btn.textContent = t("js.analyzing");
+  const analyzeRes = await fetch("/api/analyze", { method: "POST" });
+  const analyzeData = await analyzeRes.json();
+  if (analyzeData.error) {
+    alert(analyzeData.error);
+    btn.disabled = false;
+    btn.textContent = t("s2.generate");
+    return;
+  }
+  analysisData = analyzeData.analysis;
+  document.getElementById("analysis-result").textContent = analysisData;
+
+  btn.textContent = t("js.generating");
+  const res = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name:     document.getElementById("name").value,
-      location: document.getElementById("location").value,
-      price:    document.getElementById("price").value,
-      review:   document.getElementById("review").value,
-      analysis: analysisData,
+      name:         document.getElementById("name").value,
+      location:     document.getElementById("location").value,
+      price:        document.getElementById("price").value,
+      review:       document.getElementById("review").value,
+      analysis:     analysisData,
+      content_type: contentType,
     })
   });
   const data = await res.json();
 
+  const thumbSrc = name => isVideo(name)
+    ? `/api/thumbnail/${encodeURIComponent(name)}`
+    : `/api/photo/${encodeURIComponent(name)}`;
+
   document.getElementById("captions-list").innerHTML = data.captions.map((c, i) => `
     <div class="caption-item">
       <span class="caption-num">${i + 1}</span>
-      <span class="caption-file">${data.photos[i]}</span>
+      <img class="caption-thumb" src="${thumbSrc(data.photos[i])}" alt="${data.photos[i]}">
       <input class="caption-input" data-index="${i}" value="${c}">
     </div>
   `).join("");
 
   document.getElementById("step3").classList.remove("hidden");
-  document.getElementById("step3").scrollIntoView({ behavior: "smooth" });
-  btn.textContent = "자막 생성 완료";
+  document.getElementById("step3").scrollIntoView({ behavior: "smooth" }); updateStepNav();
+  btn.textContent = t("js.generated");
 });
 
 // ── 영상 생성 ─────────────────────────────────────────
@@ -266,13 +385,14 @@ document.getElementById("btn-make").addEventListener("click", async () => {
       location: document.getElementById("location").value,
       price:    document.getElementById("price").value,
       review:   document.getElementById("review").value,
-      analysis: analysisData,
-      captions: captions,
+      analysis:     analysisData,
+      captions:     captions,
+      content_type: contentType,
     })
   });
 
   document.getElementById("step4").classList.remove("hidden");
-  document.getElementById("step4").scrollIntoView({ behavior: "smooth" });
+  document.getElementById("step4").scrollIntoView({ behavior: "smooth" }); updateStepNav();
   document.getElementById("progress-fill").style.width = "30%";
   pollProgress();
 });
@@ -287,45 +407,61 @@ async function pollProgress() {
     setTimeout(pollProgress, 2000);
   } else if (data.status === "done") {
     document.getElementById("progress-fill").style.width = "100%";
-    document.getElementById("progress-msg").textContent = "✅ 완료! output 폴더에서 확인하세요.";
+    document.getElementById("progress-msg").textContent = t("js.done");
+    if (data.video_url) {
+      const video = document.getElementById("result-video");
+      video.src = data.video_url;
+      document.getElementById("btn-download").href = data.video_url;
+      document.getElementById("result-box").classList.remove("hidden");
+      document.getElementById("restart-wrap").classList.remove("hidden");
+    }
   } else if (data.status === "error") {
-    document.getElementById("progress-msg").textContent = "❌ 오류: " + data.message;
+    document.getElementById("progress-msg").textContent = t("js.error") + " " + data.message;
   }
 }
 
-// ── 초기화 ────────────────────────────────────────────
+// ── 처음부터 다시 시작하기 ───────────────────────────
 
-// ── 이어서 진행 / 새 작업 시작 ───────────────────────
-
-document.getElementById("btn-resume").addEventListener("click", async () => {
-  document.getElementById("resume-banner").classList.add("hidden");
-  await loadPhotos();
-  document.getElementById("step1-5").classList.remove("hidden");
-  document.getElementById("step1-5").scrollIntoView({ behavior: "smooth" });
+document.getElementById("btn-restart").addEventListener("click", async () => {
+  await fetch("/api/session/reset", { method: "POST" });
+  maxStepReached = 0;
+  photosData = [];
+  unlockStep1();
+  renderSortZone();
+  updatePhotoTags();
+  document.getElementById("btn-next").disabled = true;
+  document.getElementById("result-box").classList.add("hidden");
+  document.getElementById("restart-wrap").classList.add("hidden");
+  document.getElementById("result-video").src = "";
+  document.getElementById("progress-fill").style.width = "0%";
+  document.getElementById("progress-msg").textContent = "";
+  ["step1-5", "step2", "step3", "step4"].forEach(id =>
+    document.getElementById(id).classList.add("hidden")
+  );
+  document.getElementById("step1").scrollIntoView({ behavior: "smooth" }); updateStepNav();
 });
 
-document.getElementById("btn-reset").addEventListener("click", async () => {
+// ── 전체 삭제 ─────────────────────────────────────────
+
+document.getElementById("btn-clear-all").addEventListener("click", async () => {
+  if (!confirm(t("js.confirm_clear"))) return;
   await fetch("/api/session/reset", { method: "POST" });
-  document.getElementById("resume-banner").classList.add("hidden");
   photosData = [];
   renderSortZone();
   updatePhotoTags();
   document.getElementById("btn-next").disabled = true;
+  document.getElementById("btn-clear-all").style.display = "none";
   document.getElementById("step1-5").classList.add("hidden");
   document.getElementById("step2").classList.add("hidden");
   document.getElementById("step3").classList.add("hidden");
   document.getElementById("step4").classList.add("hidden");
 });
 
-async function init() {
-  const res  = await fetch("/api/session");
-  const data = await res.json();
+// ── 초기화 ────────────────────────────────────────────
 
-  if (data.status === "working" && data.photos.length > 0) {
-    document.getElementById("resume-banner").classList.remove("hidden");
-  } else {
-    await loadPhotos();
-  }
+async function init() {
+  applyContentType(contentType);
+  await loadPhotos();
 }
 
 init();

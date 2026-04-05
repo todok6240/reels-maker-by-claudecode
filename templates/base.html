@@ -3,20 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>맛집 릴스 생성기</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <title>ReelsShortsMaker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_ver }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_ver }}">
+  <script src="{{ url_for('static', filename='js/i18n.js') }}?v={{ cache_ver }}"></script>
+  <script>
+    (function() {
+      var c = localStorage.getItem('primaryColor');
+      if (c) document.documentElement.style.setProperty('--color-primary', c);
+    })();
+  </script>
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-logo">🎬 릴스 생성기</a>
-    <div class="nav-links">
-      <a href="/">홈</a>
-      <a href="/history">히스토리</a>
+    <div class="nav-left">
+      <a href="/" class="nav-logo">🎬 ReelsShortsMaker</a>
+      {% if current_user and current_user.type == 'google' %}
+      <a href="/history" class="nav-links-item" data-i18n="nav.history">과거 생성 히스토리</a>
+      {% endif %}
+    </div>
+    <div class="nav-right">
+      <div class="lang-switcher">
+        <button class="lang-btn" data-lang="ko">한국어</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="ja">日本語</button>
+      </div>
+      {% if current_user %}
+        <a href="/settings" class="nav-links-item" style="margin-right: 12px;" data-i18n="nav.settings">⚙️ 설정</a>
+        {% if current_user.type == 'google' %}
+          {% if current_user.picture %}
+            <img src="{{ current_user.picture }}" class="nav-avatar"
+                 alt="{{ current_user.name }}"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="nav-avatar nav-avatar-fallback" style="display:none">
+              {{ current_user.name[0] | upper }}
+            </div>
+          {% else %}
+            <div class="nav-avatar nav-avatar-fallback">
+              {{ current_user.name[0] | upper }}
+            </div>
+          {% endif %}
+        {% endif %}
+        <span class="nav-username">{{ current_user.name }}</span>
+        <a href="/auth/logout" class="nav-logout" data-i18n="nav.logout">로그아웃</a>
+      {% endif %}
     </div>
   </nav>
   <main>
     {% block content %}{% endblock %}
   </main>
-  <script src="/static/js/main.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v={{ cache_ver }}"></script>
 </body>
 </html>

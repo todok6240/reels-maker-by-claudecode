@@ -105,3 +105,26 @@ def list_restaurants(session_id: str = None):
         ).fetchall()
     conn.close()
     return rows
+
+
+def list_history(user_id: str):
+    """Google 유저 기준 히스토리 (reels JOIN 포함)"""
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT r.id, r.name, r.location, r.price, r.created_at,
+               rl.id AS reel_id, rl.output_path, rl.photo_count
+        FROM restaurants r
+        LEFT JOIN reels rl ON rl.restaurant_id = r.id
+        WHERE r.session_id = ?
+        ORDER BY r.created_at DESC
+    """, (user_id,)).fetchall()
+    conn.close()
+    return rows
+
+
+def get_reel_path(reel_id: int) -> str:
+    """reel_id로 output_path 반환"""
+    conn = get_conn()
+    row = conn.execute("SELECT output_path FROM reels WHERE id = ?", (reel_id,)).fetchone()
+    conn.close()
+    return row["output_path"] if row else None

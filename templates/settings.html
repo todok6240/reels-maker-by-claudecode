@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width: 520px;">
+  <div class="card" style="margin-top: 40px;">
+    <h2 data-i18n="set.title">환경설정</h2>
+
+    <div class="form-group" style="margin-top: 20px;">
+      <label style="font-size: 0.95rem; font-weight: 600; color: #1a1a1a; margin-bottom: 12px; display: block;" data-i18n="set.color_title">퍼스널 컬러</label>
+      <p style="font-size: 0.85rem; color: #888; margin-bottom: 16px;" data-i18n="set.color_desc">버튼, 강조 색상 등 앱 전체의 메인 컬러를 바꿀 수 있어요.</p>
+
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+        <button class="color-preset" data-color="#e63946" style="background:#e63946;" title="Red"></button>
+        <button class="color-preset" data-color="#f4845f" style="background:#f4845f;" title="Coral"></button>
+        <button class="color-preset" data-color="#f7b731" style="background:#f7b731;" title="Yellow"></button>
+        <button class="color-preset" data-color="#20bf6b" style="background:#20bf6b;" title="Green"></button>
+        <button class="color-preset" data-color="#0984e3" style="background:#0984e3;" title="Blue"></button>
+        <button class="color-preset" data-color="#6c5ce7" style="background:#6c5ce7;" title="Purple"></button>
+        <button class="color-preset" data-color="#fd79a8" style="background:#fd79a8;" title="Pink"></button>
+        <button class="color-preset" data-color="#2d3436" style="background:#2d3436;" title="Dark"></button>
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <label style="font-size: 0.85rem; color: #666; margin: 0;" data-i18n="set.custom">직접 선택</label>
+        <input type="color" id="color-picker" value="#e63946"
+               style="width: 48px; height: 36px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; padding: 2px;">
+        <span id="color-hex" style="font-size: 0.85rem; color: #666; font-family: monospace;">#e63946</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 28px;">
+      <button class="btn btn-primary" id="btn-save-settings" data-i18n="set.save">저장</button>
+      <button class="btn btn-outline" id="btn-reset-color" data-i18n="set.reset">기본값으로</button>
+    </div>
+
+    <p id="settings-msg" style="font-size: 0.85rem; color: #888; margin-top: 12px; min-height: 20px;"></p>
+  </div>
+</div>
+
+<style>
+.color-preset {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.color-preset:hover { transform: scale(1.15); }
+.color-preset.selected { border-color: #1a1a1a; }
+</style>
+
+<script>
+(function() {
+  const DEFAULT_COLOR = '#e63946';
+  const picker = document.getElementById('color-picker');
+  const hexLabel = document.getElementById('color-hex');
+  const presets = document.querySelectorAll('.color-preset');
+  const msg = document.getElementById('settings-msg');
+
+  const saved = localStorage.getItem('primaryColor') || DEFAULT_COLOR;
+  setColor(saved);
+
+  function setColor(hex) {
+    picker.value = hex;
+    hexLabel.textContent = hex;
+    document.documentElement.style.setProperty('--color-primary', hex);
+    presets.forEach(b => {
+      b.classList.toggle('selected', b.dataset.color.toLowerCase() === hex.toLowerCase());
+    });
+  }
+
+  picker.addEventListener('input', () => setColor(picker.value));
+
+  presets.forEach(btn => btn.addEventListener('click', () => setColor(btn.dataset.color)));
+
+  document.getElementById('btn-save-settings').addEventListener('click', () => {
+    localStorage.setItem('primaryColor', picker.value);
+    msg.textContent = window.t ? window.t('set.saved') : '저장되었어요!';
+    msg.style.color = 'var(--color-primary)';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+
+  document.getElementById('btn-reset-color').addEventListener('click', () => {
+    setColor(DEFAULT_COLOR);
+    localStorage.removeItem('primaryColor');
+    msg.textContent = window.t ? window.t('set.reset_msg') : '기본값으로 초기화했어요.';
+    msg.style.color = '#888';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+})();
+</script>
+{% endblock %}

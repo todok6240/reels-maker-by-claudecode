@@ -1,27 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 
+<div class="page-layout">
+
+<!-- 좌측 단계 네비게이션 -->
+<nav class="step-nav" id="step-nav">
+  <div class="step-nav-item" data-target="step1">
+    <div class="step-nav-track">
+      <div class="step-nav-circle"><span>1</span></div>
+      <div class="step-nav-line"></div>
+    </div>
+    <div class="step-nav-label" data-i18n="step.1">사진 업로드</div>
+  </div>
+  <div class="step-nav-item" data-target="step1-5">
+    <div class="step-nav-track">
+      <div class="step-nav-circle"><span>2</span></div>
+      <div class="step-nav-line"></div>
+    </div>
+    <div class="step-nav-label" data-i18n="step.2">순서 조정</div>
+  </div>
+  <div class="step-nav-item" data-target="step2">
+    <div class="step-nav-track">
+      <div class="step-nav-circle"><span>3</span></div>
+      <div class="step-nav-line"></div>
+    </div>
+    <div class="step-nav-label" data-i18n="step.3">정보 입력</div>
+  </div>
+  <div class="step-nav-item" data-target="step3">
+    <div class="step-nav-track">
+      <div class="step-nav-circle"><span>4</span></div>
+      <div class="step-nav-line"></div>
+    </div>
+    <div class="step-nav-label" data-i18n="step.4">자막 확인</div>
+  </div>
+  <div class="step-nav-item" data-target="step4">
+    <div class="step-nav-track">
+      <div class="step-nav-circle"><span>5</span></div>
+      <div class="step-nav-line"></div>
+    </div>
+    <div class="step-nav-label" data-i18n="step.5">영상 생성</div>
+  </div>
+</nav>
+
 <div class="container">
 
-  <!-- 이어서 진행 배너 -->
-  <div id="resume-banner" class="banner-resume hidden">
-    <span>이전 작업 파일이 있어요. 이어서 진행할까요?</span>
-    <div class="banner-actions">
-      <button class="btn btn-outline" id="btn-resume">이어서 진행</button>
-      <button class="btn btn-danger" id="btn-reset">새 작업 시작</button>
-    </div>
-  </div>
-
-  <!-- Step 1: 사진 업로드 & 분석 -->
+  <!-- Step 1: 사진 업로드 -->
   <section class="card" id="step1">
-    <h2>1단계 — 사진 업로드 & 분석</h2>
+    <h2 data-i18n="s1.title">1단계 — 사진 업로드</h2>
 
     <div id="drop-zone">
       <input type="file" id="file-input" multiple accept="image/*,video/*" hidden>
       <div id="drop-inner" onclick="document.getElementById('file-input').click()">
         <div class="drop-icon">📷</div>
-        <p class="drop-title">사진을 드래그하거나 클릭해서 업로드</p>
-        <p class="drop-sub">JPG, PNG, MP4, MOV 여러 파일 가능</p>
+        <p class="drop-title" data-i18n="s1.drop_title">사진을 드래그하거나 클릭해서 업로드</p>
+        <p class="drop-sub" data-i18n="s1.drop_sub">JPG, PNG, MP4, MOV 여러 파일 가능</p>
       </div>
     </div>
 
@@ -31,60 +63,97 @@
     </div>
 
     <div id="photo-list" class="photo-grid"></div>
-    <button class="btn btn-primary" id="btn-next" disabled>다음 단계 →</button>
+    <div class="step1-actions">
+      <button class="btn btn-ghost-danger" id="btn-clear-all" style="display:none" data-i18n="s1.clear">전체 삭제</button>
+      <button class="btn btn-primary" id="btn-next" disabled data-i18n="s1.next">다음 단계 →</button>
+    </div>
   </section>
 
   <!-- Step 1.5: 사진 순서 조정 -->
   <section class="card hidden" id="step1-5">
-    <h2>1.5단계 — 사진 순서 조정</h2>
-    <p class="step-desc">드래그로 순서를 바꾸거나 삭제할 수 있어요. 추가 사진은 오른쪽 끝에 붙어요.</p>
+    <div class="card-header-row">
+      <div>
+        <h2 data-i18n="s15.title">1.5단계 — 사진 순서 조정</h2>
+        <p class="step-desc" data-i18n="s15.desc">드래그로 순서를 바꾸거나 삭제할 수 있어요. 추가 사진은 오른쪽 끝에 붙어요.</p>
+      </div>
+      <button class="btn btn-outline btn-sort-time-top" id="btn-sort-time" data-i18n="s15.sort_time">🕐 시간순 정렬</button>
+    </div>
     <div id="sort-zone" class="sort-zone"></div>
     <div class="step-actions">
       <label class="btn btn-outline" id="btn-add-more">
-        + 사진 추가
+        <span data-i18n="s15.add">+ 사진 추가</span>
         <input type="file" id="file-input-more" multiple accept="image/*,video/*" hidden>
       </label>
-      <button class="btn btn-outline" id="btn-sort-time">🕐 시간순 정렬</button>
-      <button class="btn btn-primary" id="btn-analyze">Claude로 분석 시작</button>
+      <button class="btn btn-primary" id="btn-to-step2" data-i18n="s15.next">다음 단계 →</button>
     </div>
   </section>
 
-  <!-- Step 2: 분석 결과 & 맛집 정보 입력 -->
+  <!-- Step 2: 정보 입력 -->
   <section class="card hidden" id="step2">
-    <h2>2단계 — 맛집 정보 입력</h2>
-    <div id="analysis-result" class="analysis-box"></div>
+    <h2 data-i18n="s2.title">2단계 — 정보 입력</h2>
+
+    <!-- 콘텐츠 유형 선택 -->
+    <div class="type-selector" id="type-selector">
+      <button class="type-card active" data-type="food">🍜<span data-i18n="type.food">맛집/카페</span></button>
+      <button class="type-card" data-type="travel">✈️<span data-i18n="type.travel">여행/관광</span></button>
+      <button class="type-card" data-type="product">🛍️<span data-i18n="type.product">상품 리뷰</span></button>
+      <button class="type-card" data-type="fitness">💪<span data-i18n="type.fitness">운동/헬스</span></button>
+      <button class="type-card" data-type="vlog">🎬<span data-i18n="type.vlog">일상/브이로그</span></button>
+    </div>
+
     <div class="form-group">
-      <label>맛집 이름</label>
+      <label id="label-name">가게 이름</label>
       <input type="text" id="name" placeholder="예: 두동 쭈꾸미">
     </div>
     <div class="form-group">
-      <label>위치</label>
+      <label id="label-location">위치</label>
       <input type="text" id="location" placeholder="예: 서울 용두동">
     </div>
-    <div class="form-group">
-      <label>가격대</label>
+    <div class="form-group" id="group-price">
+      <label id="label-price">가격대</label>
       <input type="text" id="price" placeholder="예: 1인 12,000원">
     </div>
     <div class="form-group">
-      <label>한 줄 총평</label>
-      <input type="text" id="review" placeholder="예: 불맛 가득한 진짜 쭈꾸미 맛집">
+      <label id="label-review">총평</label>
+      <textarea id="review" rows="3" placeholder="예: 불맛 가득한 진짜 쭈꾸미 맛집&#10;분위기도 좋고 가성비도 최고예요"></textarea>
     </div>
-    <button class="btn btn-primary" id="btn-generate">자막 생성</button>
+    <button class="btn btn-primary" id="btn-generate" data-i18n="s2.generate">자막 생성</button>
   </section>
 
   <!-- Step 3: 자막 확인 & 영상 생성 -->
   <section class="card hidden" id="step3">
-    <h2>3단계 — 자막 확인 & 영상 생성</h2>
+    <h2 data-i18n="s3.title">3단계 — 자막 확인 & 영상 생성</h2>
+
+    <!-- 분석 결과 접기/펼치기 -->
+    <details class="analysis-details" id="analysis-details">
+      <summary data-i18n="s3.analysis">Claude 분석 결과 보기</summary>
+      <div id="analysis-result" class="analysis-box"></div>
+    </details>
+
     <div id="captions-list" class="captions-box"></div>
-    <button class="btn btn-success" id="btn-make">영상 생성 시작</button>
+    <button class="btn btn-success" id="btn-make" data-i18n="s3.make">영상 생성 시작</button>
   </section>
 
   <!-- 진행 상태 -->
   <section class="card hidden" id="step4">
-    <h2>영상 생성 중...</h2>
+    <h2 data-i18n="s4.title">영상 생성 중...</h2>
     <div class="progress-bar"><div id="progress-fill"></div></div>
     <p id="progress-msg"></p>
+
+    <!-- 완료 후 뷰어 -->
+    <div id="result-box" class="hidden">
+      <video id="result-video" class="result-video" controls playsinline></video>
+      <div class="result-actions">
+        <a id="btn-download" class="btn btn-success" download data-i18n="s4.download">다운로드</a>
+      </div>
+    </div>
   </section>
-</div>
+
+  <!-- 다시 시작 -->
+  <div id="restart-wrap" class="hidden restart-wrap">
+    <button class="btn btn-ghost-danger" id="btn-restart" data-i18n="s4.restart">처음부터 다시 시작하기</button>
+  </div>
+</div><!-- container -->
+</div><!-- page-layout -->
 
 {% endblock %}

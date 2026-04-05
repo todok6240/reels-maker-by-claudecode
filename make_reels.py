@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from database import init_db, save_restaurant, save_reel, save_captions
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from moviepy import ImageSequenceClip, AudioFileClip, VideoFileClip, ImageClip, CompositeVideoClip, concatenate_videoclips
+from moviepy import ImageSequenceClip, AudioFileClip, concatenate_videoclips
 import numpy as np
 
 # ── 설정 ──────────────────────────────────────────────
@@ -37,12 +37,22 @@ def get_api_key():
 
 
 def encode_image(photo_path: str) -> tuple[str, str]:
-    """이미지를 분석용으로 축소 후 base64 인코딩 (최대 1280px, 5MB 이하)"""
-    img = Image.open(photo_path).convert("RGB")
+    """이미지를 분석용으로 축소 후 base64 인코딩 (최대 1280px, 5MB 이하)
+    동영상 파일은 첫 프레임을 추출해서 인코딩"""
+    import io
+    ext = os.path.splitext(photo_path)[1].lower()
+    video_exts = {".mp4", ".mov", ".avi", ".m4v", ".mkv", ".3gp"}
+    if ext in video_exts:
+        from moviepy import VideoFileClip
+        clip = VideoFileClip(photo_path)
+        frame = clip.get_frame(0)
+        clip.close()
+        img = Image.fromarray(frame).convert("RGB")
+    else:
+        img = Image.open(photo_path).convert("RGB")
     max_size = 1280
     if max(img.size) > max_size:
         img.thumbnail((max_size, max_size), Image.LANCZOS)
-    import io
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=85)
     data = base64.standard_b64encode(buf.getvalue()).decode("utf-8")
@@ -90,21 +100,82 @@ def analyze_photos(photos: list[str]) -> dict:
     return message.content[0].text
 
 
+CAPTION_PROMPTS = {
+    "food": {
+        "intro": "맛집/카페 인스타그램 릴스용 자막",
+        "info_label": "맛집 정보",
+        "fields": lambda n, l, p, r: f"- 가게 이름: {n}\n- 위치: {l}\n- 가격대: {p}\n- 총평: {r}",
+        "rules": (
+            "- 1번째 사진: \"{location} {name}\" 형태로 위치+이름 소개\n"
+            "- 중간 사진들: 음식 맛·식감·분위기를 친근하게 묘사\n"
+            "- 마지막 사진: 가격대 언급 + 방문 추천 마무리\n"
+            "- 말투 예시: \"뼈 육수가 진하고 고소해요\", \"밥 말아 먹기에 딱이에요\""
+        ),
+    },
+    "travel": {
+        "intro": "여행/관광지 인스타그램 릴스용 자막",
+        "info_label": "장소 정보",
+        "fields": lambda n, l, p, r: f"- 장소명: {n}\n- 위치: {l}\n- 입장료: {p}\n- 총평: {r}",
+        "rules": (
+            "- 1번째 사진: \"{location} {name}\" 형태로 위치+장소명 소개\n"
+            "- 중간 사진들: 풍경·분위기·볼거리를 생생하게 묘사\n"
+            "- 마지막 사진: 방문 팁 또는 추천 마무리\n"
+            "- 말투 예시: \"뷰가 정말 압도적이에요\", \"꼭 한번 와보세요\""
+        ),
+    },
+    "product": {
+        "intro": "상품 리뷰 인스타그램 릴스용 자막",
+        "info_label": "상품 정보",
+        "fields": lambda n, l, p, r: f"- 상품명: {n}\n- 구매처: {l}\n- 가격: {p}\n- 총평: {r}",
+        "rules": (
+            "- 1번째 사진: 상품명 + 한 줄 소개\n"
+            "- 중간 사진들: 디자인·기능·사용감을 솔직하게 묘사\n"
+            "- 마지막 사진: 가격 언급 + 추천 여부 마무리\n"
+            "- 말투 예시: \"마감이 생각보다 깔끔해요\", \"가성비 진짜 좋아요\""
+        ),
+    },
+    "fitness": {
+        "intro": "운동/헬스 인스타그램 릴스용 자막",
+        "info_label": "운동 정보",
+        "fields": lambda n, l, p, r: f"- 운동 종목/장소: {n}\n- 위치: {l}\n- 이용 요금: {p}\n- 총평: {r}",
+        "rules": (
+            "- 1번째 사진: 운동 종목 + 장소 소개\n"
+            "- 중간 사진들: 운동 강도·시설·분위기를 생생하게 묘사\n"
+            "- 마지막 사진: 요금 언급 + 추천 마무리\n"
+            "- 말투 예시: \"코치님이 정말 꼼꼼하게 봐줘요\", \"땀이 엄청나요\""
+        ),
+    },
+    "vlog": {
+        "intro": "일상/브이로그 인스타그램 릴스용 자막",
+        "info_label": "브이로그 정보",
+        "fields": lambda n, l, p, r: f"- 제목: {n}\n- 장소: {l}\n- 내용 요약: {r}",
+        "rules": (
+            "- 1번째 사진: 브이로그 제목 또는 날짜·장소 소개\n"
+            "- 중간 사진들: 순간순간의 감정·경험을 감성적으로 묘사\n"
+            "- 마지막 사진: 여운 남기는 한 줄 마무리\n"
+            "- 말투 예시: \"오늘 하루 진짜 행복했어요\", \"또 오고 싶은 곳이에요\""
+        ),
+    },
+}
+
+
 def generate_captions(name: str, location: str, price: str, review: str,
-                      analysis: str, photo_order: list[str]) -> list[str]:
+                      analysis: str, photo_order: list[str],
+                      content_type: str = "food") -> list[str]:
     """Claude API로 자막 생성"""
     client = anthropic.Anthropic(api_key=get_api_key())
 
     photo_count = len(photo_order)
     filenames = "\n".join([f"{i+1}. {os.path.basename(p)}" for i, p in enumerate(photo_order)])
 
-    prompt = f"""맛집 인스타그램 릴스용 자막을 {photo_count}개 만들어줘.
+    cfg = CAPTION_PROMPTS.get(content_type, CAPTION_PROMPTS["food"])
+    info_str = cfg["fields"](name, location, price, review)
+    rules_str = cfg["rules"].format(name=name, location=location)
 
-맛집 정보:
-- 이름: {name}
-- 위치: {location}
-- 가격대: {price}
-- 총평: {review}
+    prompt = f"""{cfg["intro"]} 자막을 {photo_count}개 만들어줘.
+
+{cfg["info_label"]}:
+{info_str}
 
 사진 분석 결과:
 {analysis}
@@ -113,9 +184,7 @@ def generate_captions(name: str, location: str, price: str, review: str,
 {filenames}
 
 자막 구성 규칙:
-- 1번째 사진: 맛집 이름 + 위치를 정확히 그대로 사용 (예: "{location} {name}")
-- 중간 사진들: 음식/분위기 설명 (감성적으로)
-- 마지막 사진: 가격대 + 한 줄 총평
+{rules_str}
 
 조건:
 - 번호나 따옴표 없이 자막만 한 줄씩
@@ -123,7 +192,7 @@ def generate_captions(name: str, location: str, price: str, review: str,
 - 한국어
 - 이모티콘, 특수문자 절대 사용 금지 (텍스트만)
 - 각 자막은 반드시 18자 이내 (공백 제외)
-- 문장 종결은 반드시 명사형으로 끝낼 것 (예: ~임, ~함, ~됨, ~음) — "~가", "~야", "~다" 금지
+- 말투: 해요체 (있어요, 좋아요, 맛있어요) — 딱딱한 명사형 종결 금지
 - 가격은 반드시 숫자+콤마 형식으로 표기 (예: 12,000원) — 한글 숫자 금지"""
 
     message = client.messages.create(
@@ -298,29 +367,22 @@ def is_video(path: str) -> bool:
     return os.path.splitext(path)[1].lower() in VIDEO_EXTS
 
 
-def make_overlay(w: int, h: int, caption: str, name: str, location: str) -> Image.Image:
-    """투명 배경에 자막 + 뱃지를 그린 RGBA 오버레이 이미지 반환"""
-    base = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    base = draw_caption(base, caption)
-    base = draw_location_badge(base, name, location)
-    return base.convert("RGBA")
+
+VIDEO_FPS    = 30  # 동영상 슬라이드쇼 프레임레이트 (1초당 30프레임 추출)
 
 
-def build_video_clip(video_path: str, caption: str, name: str, location: str) -> CompositeVideoClip:
-    """동영상 클립에 자막+뱃지 오버레이를 합성"""
-    clip = VideoFileClip(video_path)
-
-    # 릴스 해상도로 크롭/리사이즈
-    scale = max(REELS_W / clip.w, REELS_H / clip.h)
-    clip = clip.resized(scale)
-    x = (clip.w - REELS_W) // 2
-    y = (clip.h - REELS_H) // 2
-    clip = clip.cropped(x1=x, y1=y, x2=x + REELS_W, y2=y + REELS_H)
-
-    # 오버레이 합성
-    overlay_img = make_overlay(REELS_W, REELS_H, caption, name, location)
-    overlay = ImageClip(np.array(overlay_img)).with_duration(clip.duration)
-    return CompositeVideoClip([clip, overlay])
+def extract_video_frames(video_path: str, num_frames: int = None) -> list:
+    """동영상에서 균등 간격으로 프레임을 추출해 PIL Image 리스트로 반환
+    num_frames 미지정 시 VIDEO_FPS * PHOTO_DURATION 만큼 추출 (30fps 기준)"""
+    if num_frames is None:
+        num_frames = int(VIDEO_FPS * PHOTO_DURATION)  # 기본 90프레임
+    from moviepy import VideoFileClip as _VFC
+    clip = _VFC(video_path)
+    duration = clip.duration
+    times = [min(duration * i / num_frames, duration - 0.05) for i in range(num_frames)]
+    frames = [Image.fromarray(clip.get_frame(t)).convert("RGB") for t in times]
+    clip.close()
+    return frames
 
 
 def get_photos() -> list[str]:
@@ -348,17 +410,27 @@ def make_reels(name: str, location: str, price: str, review: str,
             print("취소되었습니다.")
             return
 
+    import logging
+    import time
+
+    TIMEOUT_SEC = 300  # 5분 초과 시 타임아웃
+
     print("\n🎨 프레임 합성 중...")
-    frames = []
-    fps = 24
-    hold_frames = int(PHOTO_DURATION * fps)
+    fps = VIDEO_FPS  # 30fps
+    hold_frames = int(PHOTO_DURATION * fps)  # 사진: 90프레임 = 3초
 
     # 사진/동영상 혼합 처리
     segments = []
-    for media_path, caption in zip(photos, captions):
+    video_frame_count = int(VIDEO_FPS * PHOTO_DURATION)  # 동영상: 90프레임 추출, 각 1장씩
+    for i, (media_path, caption) in enumerate(zip(photos, captions)):
+        logging.info("[%d/%d] 처리 중: %s", i + 1, len(photos), os.path.basename(media_path))
         if is_video(media_path):
-            seg = build_video_clip(media_path, caption, name, location)
-            segments.append(seg)
+            # 동영상 → 30fps×3초 = 90프레임 추출, 각 프레임 1장씩 (총 3초)
+            pil_frames = extract_video_frames(media_path, video_frame_count)
+            seq = [np.array(
+                draw_location_badge(draw_caption(fit_image(pf, REELS_W, REELS_H), caption), name, location)
+            ) for pf in pil_frames]
+            seg = ImageSequenceClip(seq, fps=fps)
         else:
             img = ImageOps.exif_transpose(Image.open(media_path))
             img = fit_image(img, REELS_W, REELS_H)
@@ -366,16 +438,20 @@ def make_reels(name: str, location: str, price: str, review: str,
             img = draw_location_badge(img, name, location)
             frame_arr = np.array(img)
             seg = ImageSequenceClip([frame_arr] * hold_frames, fps=fps)
-            segments.append(seg)
+        segments.append(seg)
 
-    print("🎬 영상 생성 중...")
-    clip = concatenate_videoclips(segments, method="compose")
+    print("🎬 영상 인코딩 중... (약 30초~2분 소요)")
+    logging.info("concatenate_videoclips 시작 (클립 %d개)", len(segments))
+    t0 = time.time()
+    clip = concatenate_videoclips(segments, method="chain")
+    logging.info("concatenate 완료 (%.1fs)", time.time() - t0)
     total_duration = clip.duration
 
     bgm_files = glob.glob(os.path.join(BGM_DIR, "*.mp3"))
     if bgm_files:
         bgm_path = random.choice(bgm_files)
-        print(f"🎵 BGM: {os.path.basename(bgm_path)}")
+        logging.info("BGM 선택 (%d개 중): %s", len(bgm_files), os.path.basename(bgm_path))
+        print(f"🎵 BGM ({len(bgm_files)}개 중 랜덤): {os.path.basename(bgm_path)}")
         audio = AudioFileClip(bgm_path)
         if audio.duration < total_duration:
             from moviepy import concatenate_audioclips
@@ -388,8 +464,37 @@ def make_reels(name: str, location: str, price: str, review: str,
     out_dir = output_dir if output_dir else OUTPUT_DIR
     os.makedirs(out_dir, exist_ok=True)
     output_path = os.path.join(out_dir, f"{safe_name}_reels.mp4")
-    clip.write_videofile(output_path, fps=fps, codec="libx264", audio_codec="aac",
-                         ffmpeg_params=["-crf", "18", "-preset", "slow"], logger=None)
+
+    logging.info("write_videofile 시작: %s", output_path)
+    t1 = time.time()
+
+    import threading as _threading
+    encode_error = [None]
+    encode_done  = [False]
+
+    def _encode():
+        try:
+            clip.write_videofile(
+                output_path, fps=fps, codec="libx264", audio_codec="aac",
+                ffmpeg_params=["-crf", "23", "-preset", "fast"],
+                logger=None
+            )
+            encode_done[0] = True
+        except Exception as e:
+            encode_error[0] = e
+
+    enc_thread = _threading.Thread(target=_encode, daemon=True)
+    enc_thread.start()
+    enc_thread.join(timeout=TIMEOUT_SEC)
+
+    if enc_thread.is_alive():
+        elapsed = time.time() - t1
+        raise TimeoutError(f"영상 인코딩 {TIMEOUT_SEC}초 초과 (경과: {elapsed:.0f}s). "
+                           "파일 수를 줄이거나 동영상 해상도를 낮춰주세요.")
+    if encode_error[0]:
+        raise encode_error[0]
+
+    logging.info("write_videofile 완료 (%.1fs)", time.time() - t1)
 
     print(f"\n✅ 완료! 저장 위치: {output_path}")
 

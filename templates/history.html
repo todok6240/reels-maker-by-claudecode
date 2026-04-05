@@ -3,34 +3,42 @@
 
 <div class="container">
   <section class="card">
-    <h2>히스토리</h2>
-    {% if restaurants %}
+    <h2 data-i18n="hist.title">과거 생성 히스토리</h2>
+    {% if rows %}
     <table class="history-table">
       <thead>
         <tr>
           <th>#</th>
-          <th>맛집 이름</th>
-          <th>위치</th>
-          <th>가격대</th>
-          <th>세션</th>
-          <th>생성일</th>
+          <th data-i18n="hist.th.title">타이틀</th>
+          <th data-i18n="hist.th.location">위치</th>
+          <th data-i18n="hist.th.price">가격대</th>
+          <th data-i18n="hist.th.photos">사진 수</th>
+          <th data-i18n="hist.th.date">생성일</th>
+          <th data-i18n="hist.th.download">다운로드</th>
         </tr>
       </thead>
       <tbody>
-        {% for r in restaurants %}
+        {% for r in rows %}
         <tr>
           <td>{{ r.id }}</td>
           <td>{{ r.name }}</td>
           <td>{{ r.location }}</td>
           <td>{{ r.price }}</td>
-          <td class="session-id">{{ r.session_id[:8] }}...</td>
+          <td>{{ r.photo_count or '-' }}</td>
           <td>{{ r.created_at }}</td>
+          <td>
+            {% if r.reel_id and r.output_path %}
+              <a href="/download/{{ r.reel_id }}" class="btn-download-history" data-i18n="hist.download">다운로드</a>
+            {% else %}
+              <span class="empty-cell">-</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     {% else %}
-    <p class="empty">아직 생성된 릴스가 없어요.</p>
+    <p class="empty" data-i18n="hist.empty">아직 생성된 릴스가 없어요.</p>
     {% endif %}
   </section>
 </div>

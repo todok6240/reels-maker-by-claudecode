@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReelsShortsMaker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_ver }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_ver }}">
+  <script src="{{ url_for('static', filename='js/i18n.js') }}?v={{ cache_ver }}"></script>
+  <script>
+    (function() {
+      var c = localStorage.getItem('primaryColor');
+      if (c) document.documentElement.style.setProperty('--color-primary', c);
+    })();
+  </script>
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-logo">🎬</div>
+    <h1 class="login-title">ReelsShortsMaker</h1>
+    <p class="login-sub" data-i18n="login.subtitle">사진으로 릴스를 자동으로 만들어보세요</p>
+
+    <div class="login-actions">
+      <a href="/auth/google" class="btn-login btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
+        <span data-i18n="login.google">Google로 로그인</span>
+      </a>
+
+      <div class="login-divider"><span data-i18n="login.or">또는</span></div>
+
+      <form action="/auth/guest" method="post">
+        <button type="submit" class="btn-login btn-guest" data-i18n="login.guest">게스트로 시작하기</button>
+      </form>
+    </div>
+
+    <p class="login-notice" data-i18n="login.notice">게스트 로그인은 브라우저를 닫으면 기록이 사라져요</p>
+
+    <div class="lang-switcher" style="justify-content: center; margin-top: 20px;">
+      <button class="lang-btn" data-lang="ko">한국어</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="ja">日本語</button>
+    </div>
+  </div>
+</body>
+</html>
