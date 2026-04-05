@@ -113,7 +113,7 @@ def generate_captions(name: str, location: str, price: str, review: str,
 {filenames}
 
 자막 구성 규칙:
-- 1번째 사진: 맛집 이름 + 위치 (예: "홍대 스기모토 라멘")
+- 1번째 사진: 맛집 이름 + 위치를 정확히 그대로 사용 (예: "{location} {name}")
 - 중간 사진들: 음식/분위기 설명 (감성적으로)
 - 마지막 사진: 가격대 + 한 줄 총평
 
@@ -122,7 +122,9 @@ def generate_captions(name: str, location: str, price: str, review: str,
 - 정확히 {photo_count}줄
 - 한국어
 - 이모티콘, 특수문자 절대 사용 금지 (텍스트만)
-- 각 자막은 반드시 12자 이내 (공백 포함)"""
+- 각 자막은 반드시 18자 이내 (공백 제외)
+- 문장 종결은 반드시 명사형으로 끝낼 것 (예: ~임, ~함, ~됨, ~음) — "~가", "~야", "~다" 금지
+- 가격은 반드시 숫자+콤마 형식으로 표기 (예: 12,000원) — 한글 숫자 금지"""
 
     message = client.messages.create(
         model="claude-sonnet-4-6",
@@ -170,9 +172,9 @@ def draw_caption(img: Image.Image, text: str) -> Image.Image:
     draw = ImageDraw.Draw(img)
 
     font_paths = [
-        "/System/Library/Fonts/AppleSDGothicNeo.ttc",   # 모던한 산세리프
+        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",  # 이사만루체
+        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
         "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-        "/Library/Fonts/NanumGothicBold.ttf",
     ]
     font = None
     for fp in font_paths:
@@ -229,6 +231,7 @@ def draw_location_badge(img: Image.Image, name: str, location: str) -> Image.Ima
     draw = ImageDraw.Draw(img)
 
     font_paths = [
+        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",  # 이사만루체
         "/System/Library/Fonts/AppleSDGothicNeo.ttc",
         "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
     ]
@@ -299,18 +302,19 @@ def get_photos() -> list[str]:
 
 
 def make_reels(name: str, location: str, price: str, review: str,
-               analysis: str, photos: list[str]):
-    print("✍️  자막 생성 중...")
-    captions = generate_captions(name, location, price, review, analysis, photos)
+               analysis: str, photos: list[str], captions: list[str] = None):
+    if captions is None:
+        print("✍️  자막 생성 중...")
+        captions = generate_captions(name, location, price, review, analysis, photos)
 
-    print("\n📝 생성된 자막:")
-    for i, (p, c) in enumerate(zip(photos, captions)):
-        print(f"   {i+1}. {os.path.basename(p)} → {c}")
+        print("\n📝 생성된 자막:")
+        for i, (p, c) in enumerate(zip(photos, captions)):
+            print(f"   {i+1}. {os.path.basename(p)} → {c}")
 
-    confirm = input("\n이 자막으로 영상을 만들까요? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("취소되었습니다.")
-        return
+        confirm = input("\n이 자막으로 영상을 만들까요? (y/n): ").strip().lower()
+        if confirm != "y":
+            print("취소되었습니다.")
+            return
 
     print("\n🎨 프레임 합성 중...")
     frames = []
