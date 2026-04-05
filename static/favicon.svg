@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 배경 원 -->
+  <circle cx="16" cy="16" r="15" fill="#e63946"/>
+  <!-- 필름 릴 외곽 원 -->
+  <circle cx="16" cy="16" r="10" fill="none" stroke="white" stroke-width="2"/>
+  <!-- 중앙 원 -->
+  <circle cx="16" cy="16" r="3" fill="white"/>
+  <!-- 필름 구멍 6개 -->
+  <circle cx="16" cy="6.5" r="1.5" fill="white"/>
+  <circle cx="16" cy="25.5" r="1.5" fill="white"/>
+  <circle cx="6.5" cy="16" r="1.5" fill="white"/>
+  <circle cx="25.5" cy="16" r="1.5" fill="white"/>
+  <circle cx="9.3" cy="9.3" r="1.5" fill="white"/>
+  <circle cx="22.7" cy="22.7" r="1.5" fill="white"/>
+  <circle cx="22.7" cy="9.3" r="1.5" fill="white"/>
+  <circle cx="9.3" cy="22.7" r="1.5" fill="white"/>
+</svg>
