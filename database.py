@@ -7,7 +7,7 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_PATH = os.path.expanduser("~/reels_maker/reels.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reels.db")
 
 
 def get_conn():

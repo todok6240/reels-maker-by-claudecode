@@ -71,7 +71,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-BASE_DIR   = os.path.expanduser("~/reels_maker")
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
