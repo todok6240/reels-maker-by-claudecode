@@ -118,6 +118,18 @@
       <textarea id="review" rows="3" placeholder="예: 불맛 가득한 진짜 쭈꾸미 맛집&#10;분위기도 좋고 가성비도 최고예요"></textarea>
     </div>
     <button class="btn btn-primary" id="btn-generate" data-i18n="s2.generate">자막 생성</button>
+
+    <!-- 자막 생성 진행 상태 바 -->
+    <div id="generate-progress" class="gen-progress hidden">
+      <div class="gen-bar-wrap">
+        <div class="gen-bar-fill" id="gen-bar-fill"></div>
+      </div>
+      <div class="gen-stages">
+        <span class="gen-stage" id="gstage-1" data-i18n="gen.analyzing">📷 사진 분석</span>
+        <span class="gen-stage" id="gstage-2" data-i18n="gen.generating">✍️ 자막 생성</span>
+        <span class="gen-stage" id="gstage-3" data-i18n="gen.complete">✅ 완료</span>
+      </div>
+    </div>
   </section>
 
   <!-- Step 3: 자막 확인 & 영상 생성 -->
@@ -131,7 +143,7 @@
     </details>
 
     <div id="captions-list" class="captions-box"></div>
-    <button class="btn btn-success" id="btn-make" data-i18n="s3.make">영상 생성 시작</button>
+    <button class="btn btn-primary" id="btn-make" data-i18n="s3.make">영상 생성 시작</button>
   </section>
 
   <!-- 진행 상태 -->
@@ -144,7 +156,9 @@
     <div id="result-box" class="hidden">
       <video id="result-video" class="result-video" controls playsinline></video>
       <div class="result-actions">
-        <a id="btn-download" class="btn btn-success" download data-i18n="s4.download">다운로드</a>
+        <a id="btn-download" class="btn btn-outline-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="s4.download">다운로드</span>
+        </a>
       </div>
     </div>
   </section>

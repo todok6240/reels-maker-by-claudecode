@@ -6,13 +6,16 @@
 import os
 import glob
 import uuid
+import json
 import threading
 import logging
 import colorlog
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for, abort
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
+import redis
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -32,12 +35,17 @@ logging.getLogger().handlers = [handler]
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("werkzeug").setLevel(logging.INFO)
 
-from database import init_db, list_restaurants, list_history, get_reel_path, save_restaurant, save_reel, save_captions
+from database import init_db, list_restaurants, list_history, get_reel_path, get_reel_owner, save_restaurant, save_reel, save_captions
 from make_reels import analyze_photos, generate_captions, make_reels
 
 import time as _time
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "reels-maker-secret-2024")
+
+# secret_key는 반드시 환경변수로 설정해야 함. 없으면 서버 시작 거부
+_secret = os.environ.get("FLASK_SECRET_KEY")
+if not _secret:
+    raise RuntimeError("FLASK_SECRET_KEY 환경변수가 설정되지 않았습니다. .env 파일을 확인하세요.")
+app.secret_key = _secret
 
 CACHE_VER = str(int(_time.time()))
 
@@ -67,8 +75,24 @@ BASE_DIR   = os.path.expanduser("~/reels_maker")
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
-# 세션별 진행 상태
-progress_map = {}
+# ── Redis 진행 상태 ───────────────────────────────────
+_redis = redis.Redis(
+    host=os.environ.get("REDIS_HOST", "127.0.0.1"),
+    port=int(os.environ.get("REDIS_PORT", 6379)),
+    password=os.environ.get("REDIS_PASSWORD") or None,
+    decode_responses=True,
+)
+PROGRESS_TTL = 60 * 60  # 1시간 후 자동 만료
+
+def set_progress(sid: str, data: dict):
+    _redis.setex(f"progress:{sid}", PROGRESS_TTL, json.dumps(data))
+
+def get_progress(sid: str) -> dict:
+    raw = _redis.get(f"progress:{sid}")
+    return json.loads(raw) if raw else {"status": "idle", "message": ""}
+
+def del_progress(sid: str):
+    _redis.delete(f"progress:{sid}")
 
 
 def get_session_id():
@@ -86,12 +110,21 @@ def get_user_id():
 
 
 def session_photos_dir(sid):
+    # sid는 UUID 형식만 허용
+    try:
+        uuid.UUID(sid)
+    except ValueError:
+        abort(400)
     path = os.path.join(PHOTOS_DIR, sid)
     os.makedirs(path, exist_ok=True)
     return path
 
 
 def session_output_dir(sid):
+    try:
+        uuid.UUID(sid)
+    except ValueError:
+        abort(400)
     path = os.path.join(OUTPUT_DIR, sid)
     os.makedirs(path, exist_ok=True)
     return path
@@ -112,15 +145,38 @@ def clear_session_files(sid):
     """세션 사진 폴더 전체 삭제"""
     import shutil
     path = os.path.join(PHOTOS_DIR, sid)
+    # 경로가 PHOTOS_DIR 안에 있는지 검증
+    real_path = os.path.realpath(path)
+    real_base = os.path.realpath(PHOTOS_DIR)
+    if not real_path.startswith(real_base + os.sep):
+        abort(400)
     if os.path.exists(path):
         shutil.rmtree(path)
+
+
+def safe_join_check(base_dir, filename):
+    """filename이 base_dir 안에 있는지 확인 후 경로 반환. 벗어나면 abort(400)"""
+    safe_name = secure_filename(filename)
+    if not safe_name:
+        abort(400)
+    full_path = os.path.realpath(os.path.join(base_dir, safe_name))
+    real_base = os.path.realpath(base_dir)
+    if not full_path.startswith(real_base + os.sep):
+        abort(400)
+    return full_path, safe_name
 
 
 @app.route("/login")
 def login():
     if "user" in session:
         return redirect(url_for("index"))
-    return render_template("login.html")
+    login_bg = None
+    for ext in ("jpg", "jpeg", "png", "webp"):
+        candidate = os.path.join(BASE_DIR, "static", "images", f"login_bg.{ext}")
+        if os.path.exists(candidate):
+            login_bg = f"login_bg.{ext}"
+            break
+    return render_template("login.html", login_bg=login_bg)
 
 @app.route("/auth/guest", methods=["POST"])
 def auth_guest():
@@ -179,9 +235,22 @@ def history():
 @app.route("/download/<int:reel_id>")
 @login_required
 def download_reel(reel_id):
+    # 소유권 확인: 이 reel이 현재 유저 것인지 검증
+    user_id = get_user_id()
+    owner = get_reel_owner(reel_id)
+    if owner is None or owner != user_id:
+        abort(403)
+
     path = get_reel_path(reel_id)
     if not path or not os.path.exists(path):
         return "파일을 찾을 수 없습니다.", 404
+
+    # 경로가 OUTPUT_DIR 안에 있는지 검증
+    real_path = os.path.realpath(path)
+    real_base = os.path.realpath(OUTPUT_DIR)
+    if not real_path.startswith(real_base + os.sep):
+        abort(403)
+
     directory = os.path.dirname(path)
     filename  = os.path.basename(path)
     return send_from_directory(directory, filename, as_attachment=True)
@@ -200,6 +269,7 @@ def api_session_reset():
     sid = get_session_id()
     clear_session_files(sid)
     session["work_status"] = "idle"
+    del_progress(sid)
     return jsonify({"ok": True})
 
 
@@ -216,11 +286,17 @@ def api_upload():
     saved = []
     photos_dir = session_photos_dir(sid)
     for f in files:
-        ext = os.path.splitext(f.filename)[1].lower() if f.filename else ""
-        if f.filename and ext in ALLOWED_EXTS:
-            dest = os.path.join(photos_dir, f.filename)
-            f.save(dest)
-            saved.append(f.filename)
+        if not f.filename:
+            continue
+        ext = os.path.splitext(f.filename)[1].lower()
+        if ext not in ALLOWED_EXTS:
+            continue
+        safe_name = secure_filename(f.filename)
+        if not safe_name:
+            continue
+        dest = os.path.join(photos_dir, safe_name)
+        f.save(dest)
+        saved.append(safe_name)
 
     return jsonify({"uploaded": saved, "count": len(saved)})
 
@@ -229,11 +305,15 @@ def api_upload():
 def api_thumbnail(filename):
     """동영상 첫 프레임을 JPEG로 반환"""
     sid = get_session_id()
-    path = os.path.join(session_photos_dir(sid), filename)
+    photos_dir = session_photos_dir(sid)
+    full_path, _ = safe_join_check(photos_dir, filename)
+    if not os.path.exists(full_path):
+        abort(404)
+
     from moviepy import VideoFileClip
     import io
     from PIL import Image as PILImage
-    clip = VideoFileClip(path)
+    clip = VideoFileClip(full_path)
     frame = clip.get_frame(0)
     clip.close()
     img = PILImage.fromarray(frame)
@@ -255,10 +335,9 @@ def api_sort_by_time():
 
     def get_capture_time(path):
         import subprocess, json
-        from datetime import datetime, timezone
+        from datetime import datetime
         ext = os.path.splitext(path)[1].lower()
 
-        # 동영상: ffprobe로 creation_time 메타데이터 추출
         if ext in VIDEO_EXTS:
             try:
                 result = subprocess.run(
@@ -269,14 +348,12 @@ def api_sort_by_time():
                 data = json.loads(result.stdout)
                 dt_str = data.get("format", {}).get("tags", {}).get("creation_time", "")
                 if dt_str:
-                    # ISO 8601 형식: "2024-01-15T14:30:00.000000Z"
                     dt_str = dt_str.replace("Z", "+00:00")
                     return datetime.fromisoformat(dt_str).timestamp()
             except Exception:
                 pass
             return os.path.getmtime(path)
 
-        # 사진: EXIF DateTimeOriginal 우선
         if ext in IMAGE_EXTS:
             try:
                 from PIL import Image as PILImage
@@ -288,7 +365,6 @@ def api_sort_by_time():
                         return datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").timestamp()
             except Exception:
                 pass
-        # 폴백: 파일 수정 시간
         return os.path.getmtime(path)
 
     sorted_photos = sorted(photos, key=get_capture_time)
@@ -298,17 +374,20 @@ def api_sort_by_time():
 @app.route("/api/photos/delete", methods=["POST"])
 def api_photos_delete():
     sid = get_session_id()
-    filename = request.json.get("filename")
-    path = os.path.join(session_photos_dir(sid), filename)
-    if os.path.exists(path):
-        os.remove(path)
+    filename = request.json.get("filename", "")
+    photos_dir = session_photos_dir(sid)
+    full_path, _ = safe_join_check(photos_dir, filename)
+    if os.path.exists(full_path):
+        os.remove(full_path)
     return jsonify({"ok": True})
 
 
 @app.route("/api/photo/<filename>")
 def api_photo(filename):
     sid = get_session_id()
-    return send_from_directory(session_photos_dir(sid), filename)
+    photos_dir = session_photos_dir(sid)
+    _, safe_name = safe_join_check(photos_dir, filename)
+    return send_from_directory(photos_dir, safe_name)
 
 
 @app.route("/api/photos")
@@ -369,37 +448,44 @@ def api_make():
     out_dir = session_output_dir(sid)
 
     def run():
-        progress_map[sid] = {"status": "running", "message": "영상 생성 중..."}
+        set_progress(sid, {"status": "running", "message": ""})
         try:
             make_reels(name, location, price, review, analysis, photos, captions,
                        output_dir=out_dir)
             restaurant_id = save_restaurant(user_id, name, location, price, review)
-            safe_name = name.replace(" ", "_")
+            safe_name = secure_filename(name) or "reels"
             output_path = os.path.join(out_dir, f"{safe_name}_reels.mp4")
-            reel_id = save_reel(restaurant_id, output_path, len(photos))
+            reel_id = save_reel(restaurant_id, output_path, len(photos), user_id)
             save_captions(reel_id, photos, captions)
-            safe_filename = f"{safe_name}_reels.mp4"
-            video_url = f"/output/{sid}/{safe_filename}"
-            progress_map[sid] = {"status": "done", "message": "완료!", "video_url": video_url}
+            video_url = f"/output/{sid}/{safe_name}_reels.mp4"
+            set_progress(sid, {"status": "done", "message": "", "video_url": video_url})
         except Exception as e:
             logging.error("영상 생성 실패: %s", e, exc_info=True)
-            progress_map[sid] = {"status": "error", "message": str(e)}
+            set_progress(sid, {"status": "error", "message": str(e)})
 
-    threading.Thread(target=run).start()
+    threading.Thread(target=run, daemon=True).start()
     return jsonify({"message": "생성 시작됨"})
 
 
 @app.route("/api/progress")
 def api_progress():
     sid = get_session_id()
-    return jsonify(progress_map.get(sid, {"status": "idle", "message": ""}))
+    return jsonify(get_progress(sid))
 
 
 @app.route("/output/<sid>/<filename>")
+@login_required
 def output_file(sid, filename):
-    return send_from_directory(os.path.join(OUTPUT_DIR, sid), filename)
+    # 요청한 sid가 현재 세션의 sid와 일치하는지 확인
+    my_sid = get_session_id()
+    if sid != my_sid:
+        abort(403)
+
+    out_dir = os.path.join(OUTPUT_DIR, sid)
+    _, safe_name = safe_join_check(out_dir, filename)
+    return send_from_directory(out_dir, safe_name)
 
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)

@@ -54,6 +54,7 @@ nav {
 
 /* Container */
 .container { max-width: 760px; margin: 40px auto; padding: 0 20px; }
+.container-lg { max-width: 1140px; margin: 40px auto; padding: 0 20px; }
 
 /* Step nav */
 .step-nav {
@@ -212,7 +213,7 @@ nav {
   user-select: none;
   transition: transform 0.15s ease;
 }
-.sort-item.dragging { opacity: 0.3; cursor: grabbing; }
+.sort-item.dragging { opacity: 0; cursor: grabbing; }
 
 .sort-placeholder {
   flex-shrink: 0;
@@ -414,18 +415,23 @@ nav {
 .type-card:hover { border-color: var(--color-primary); }
 .type-card.active { border-color: var(--color-primary); background: #fff5f5; }
 .type-card.active span { color: var(--color-primary); }
+.type-selector.locked {
+  pointer-events: none;
+  opacity: 0.5;
+}
 
 /* Analysis details */
 .analysis-details {
   margin-bottom: 20px;
-  border: 1px solid #e5e5e5;
+  border: 1.5px solid var(--color-primary);
   border-radius: 8px;
   overflow: hidden;
 }
 .analysis-details summary {
   padding: 10px 14px;
   font-size: 0.85rem;
-  color: #888;
+  color: var(--color-primary);
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
   list-style: none;
@@ -435,7 +441,12 @@ nav {
 }
 .analysis-details summary::before { content: "▶"; font-size: 0.65rem; transition: transform 0.2s; }
 .analysis-details[open] summary::before { transform: rotate(90deg); }
-.analysis-details .analysis-box { border: none; border-top: 1px solid #e5e5e5; border-radius: 0; }
+.analysis-details .analysis-box {
+  border: none;
+  border-top: 1px solid var(--color-primary);
+  border-radius: 0;
+  color: #444;
+}
 
 /* Captions */
 .captions-box { margin-bottom: 20px; }
@@ -482,6 +493,42 @@ nav {
 .btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 .btn-primary { background: var(--color-primary); color: #fff; }
 .btn-success { background: #2a9d8f; color: #fff; }
+.btn-outline-primary {
+  background: #fff;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+
+/* Generate progress (Step 2) */
+.gen-progress { margin-top: 20px; }
+.gen-bar-wrap {
+  height: 6px;
+  background: #efefef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.gen-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.gen-stages {
+  display: flex;
+  justify-content: space-between;
+}
+.gen-stage {
+  font-size: 0.8rem;
+  color: #ccc;
+  transition: color 0.3s, font-weight 0.3s;
+}
+.gen-stage.active {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.gen-stage.done { color: #aaa; }
 
 /* Progress */
 .progress-bar {
@@ -520,7 +567,7 @@ nav {
 .result-actions {
   display: flex;
   gap: 12px;
-  justify-content: center;
+  justify-content: flex-start;
   margin-top: 16px;
   flex-wrap: wrap;
 }

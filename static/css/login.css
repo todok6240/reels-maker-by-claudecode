@@ -1,25 +1,133 @@
+/* ── 이사만루체 ───────────────────────────────────── */
+@font-face {
+  font-family: 'ISAManru';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2211-2@1.0/ISAManruTTF.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ── Split layout ─────────────────────────────────── */
 .login-body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: #f5f5f7;
+  display: block;
+  align-items: unset;
+  justify-content: unset;
+}
+
+.login-split {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* 왼쪽 이미지 영역 — 60% */
+.login-visual {
+  flex: 0 0 60%;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.login-visual-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+
+/* 왼쪽 하단 캡션 텍스트 */
+.login-visual-caption {
+  position: absolute;
+  bottom: 44px;
+  left: 48px;
+  right: 48px;
+  z-index: 2;
+}
+.login-visual-caption p {
+  font-family: 'ISAManru', 'Noto Sans KR', sans-serif;
+  font-size: 2rem;
+  color: #fff;
+  line-height: 1.4;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.45);
+  margin: 0;
+}
+
+/* 이미지 위 어두운 그라디언트 오버레이 (캡션 가독성) */
+.login-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 이미지 없을 때 그라디언트 플레이스홀더 */
+.login-visual-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, var(--color-primary, #e63946) 100%);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.login-visual-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+}
+
+.login-visual-text {
+  position: relative;
+  z-index: 1;
+  padding: 56px 52px;
+  color: #fff;
+}
+
+.login-visual-logo {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.login-visual-text h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.login-visual-text p {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+}
+
+/* 오른쪽 로그인 패널 — 40% */
+.login-panel {
+  flex: 0 0 40%;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  background: #f5f5f7;
-}
-
-.login-card {
   background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 16px;
-  padding: 48px 40px;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  padding: 48px 32px;
 }
 
-.login-logo { font-size: 2.8rem; margin-bottom: 12px; }
-.login-title { font-size: 1.4rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
-.login-sub { font-size: 0.9rem; color: #888; margin-bottom: 36px; }
+.login-panel-inner {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.login-logo { font-size: 2.4rem; margin-bottom: 10px; }
+.login-title { font-size: 1.35rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+.login-sub { font-size: 0.88rem; color: #888; margin-bottom: 36px; }
 
 .login-actions { display: flex; flex-direction: column; gap: 12px; }
 
@@ -63,6 +171,14 @@
 .login-divider::after { content: ""; flex: 1; height: 1px; background: #eee; }
 
 .login-notice { font-size: 0.78rem; color: #bbb; margin-top: 24px; }
+
+/* 반응형: 작은 화면에서는 세로 스택 */
+@media (max-width: 720px) {
+  .login-split { flex-direction: column; }
+  .login-visual { flex: 0 0 220px; min-height: 220px; }
+  .login-visual-placeholder { min-height: 220px; }
+  .login-panel { flex: 1; }
+}
 
 /* Nav user info */
 .nav-avatar {

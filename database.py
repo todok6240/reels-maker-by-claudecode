@@ -35,6 +35,7 @@ def init_db():
             restaurant_id INTEGER NOT NULL,
             output_path   TEXT,
             photo_count   INTEGER,
+            owner_id      TEXT,
             created_at    TEXT DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
         );
@@ -48,6 +49,12 @@ def init_db():
             FOREIGN KEY (reel_id) REFERENCES reels(id)
         );
     """)
+    # 기존 DB에 owner_id 컬럼이 없으면 추가 (마이그레이션)
+    try:
+        conn.execute("ALTER TABLE reels ADD COLUMN owner_id TEXT")
+        conn.commit()
+    except Exception:
+        pass  # 이미 존재하면 무시
     conn.commit()
     conn.close()
 
@@ -65,12 +72,12 @@ def save_restaurant(session_id: str, name: str, location: str, price: str, revie
     return rid
 
 
-def save_reel(restaurant_id: int, output_path: str, photo_count: int) -> int:
+def save_reel(restaurant_id: int, output_path: str, photo_count: int, owner_id: str = None) -> int:
     """릴스 정보 저장 후 ID 반환"""
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO reels (restaurant_id, output_path, photo_count) VALUES (?, ?, ?)",
-        (restaurant_id, output_path, photo_count)
+        "INSERT INTO reels (restaurant_id, output_path, photo_count, owner_id) VALUES (?, ?, ?, ?)",
+        (restaurant_id, output_path, photo_count, owner_id)
     )
     reel_id = cur.lastrowid
     conn.commit()
@@ -128,3 +135,11 @@ def get_reel_path(reel_id: int) -> str:
     row = conn.execute("SELECT output_path FROM reels WHERE id = ?", (reel_id,)).fetchone()
     conn.close()
     return row["output_path"] if row else None
+
+
+def get_reel_owner(reel_id: int) -> str:
+    """reel_id의 소유자 ID 반환 (소유권 확인용)"""
+    conn = get_conn()
+    row = conn.execute("SELECT owner_id FROM reels WHERE id = ?", (reel_id,)).fetchone()
+    conn.close()
+    return row["owner_id"] if row else None

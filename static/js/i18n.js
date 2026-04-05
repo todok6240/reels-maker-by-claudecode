@@ -8,6 +8,7 @@ const TRANSLATIONS = {
     'nav.logout': '로그아웃',
 
     // Login
+    'login.caption': '나만의 릴스를\n편하게 만들어 보세요',
     'login.subtitle': '사진으로 릴스를 자동으로 만들어보세요',
     'login.google': 'Google로 로그인',
     'login.or': '또는',
@@ -22,21 +23,21 @@ const TRANSLATIONS = {
     'step.5': '영상 생성',
 
     // Step 1
-    's1.title': '1단계 — 사진 업로드',
+    's1.title': '사진 업로드',
     's1.drop_title': '사진을 드래그하거나 클릭해서 업로드',
     's1.drop_sub': 'JPG, PNG, MP4, MOV 여러 파일 가능',
     's1.clear': '전체 삭제',
     's1.next': '다음 단계 →',
 
     // Step 1.5
-    's15.title': '1.5단계 — 사진 순서 조정',
+    's15.title': '순서 조정',
     's15.desc': '드래그로 순서를 바꾸거나 삭제할 수 있어요. 추가 사진은 오른쪽 끝에 붙어요.',
     's15.add': '+ 사진 추가',
     's15.sort_time': '🕐 시간순 정렬',
     's15.next': '다음 단계 →',
 
     // Step 2
-    's2.title': '2단계 — 정보 입력',
+    's2.title': '정보 입력',
     's2.generate': '자막 생성',
     'type.food': '맛집/카페',
     'type.travel': '여행/관광',
@@ -45,12 +46,12 @@ const TRANSLATIONS = {
     'type.vlog': '일상/브이로그',
 
     // Step 3
-    's3.title': '3단계 — 자막 확인 & 영상 생성',
+    's3.title': '자막 확인',
     's3.analysis': 'Claude 분석 결과 보기',
     's3.make': '영상 생성 시작',
 
     // Step 4
-    's4.title': '영상 생성 중...',
+    's4.title': '영상 생성',
     's4.download': '다운로드',
     's4.restart': '처음부터 다시 시작하기',
 
@@ -76,6 +77,10 @@ const TRANSLATIONS = {
     'set.reset_msg': '기본값으로 초기화했어요.',
 
     // JS dynamic
+    'gen.analyzing': '📷 사진 분석',
+    'gen.generating': '✍️ 자막 생성',
+    'gen.complete': '✅ 완료',
+
     'js.uploading': (n) => `${n}장 업로드 중...`,
     'js.uploaded': (n) => `✅ ${n}장 업로드 완료`,
     'js.adding': (n) => `${n}장 추가 중...`,
@@ -86,6 +91,7 @@ const TRANSLATIONS = {
     'js.generating': '자막 생성 중...',
     'js.generated': '자막 생성 완료 ✓',
     'js.confirm_clear': '업로드한 파일을 모두 삭제할까요?',
+    'js.video_generating': '영상 생성 중...',
     'js.done': '✅ 완료!',
     'js.error': '❌ 오류:',
 
@@ -107,6 +113,7 @@ const TRANSLATIONS = {
     'nav.settings': '⚙️ Settings',
     'nav.logout': 'Logout',
 
+    'login.caption': 'Create your own reels,\neffortlessly',
     'login.subtitle': 'Create reels from your photos automatically',
     'login.google': 'Sign in with Google',
     'login.or': 'or',
@@ -119,19 +126,19 @@ const TRANSLATIONS = {
     'step.4': 'Captions',
     'step.5': 'Generate',
 
-    's1.title': 'Step 1 — Upload Photos',
+    's1.title': 'Upload',
     's1.drop_title': 'Drag & drop or click to upload',
     's1.drop_sub': 'JPG, PNG, MP4, MOV — multiple files supported',
     's1.clear': 'Clear All',
     's1.next': 'Next →',
 
-    's15.title': 'Step 1.5 — Reorder Photos',
+    's15.title': 'Reorder',
     's15.desc': 'Drag to reorder or delete. New photos are added at the end.',
     's15.add': '+ Add Photos',
     's15.sort_time': '🕐 Sort by Time',
     's15.next': 'Next →',
 
-    's2.title': 'Step 2 — Enter Info',
+    's2.title': 'Enter Info',
     's2.generate': 'Generate Captions',
     'type.food': 'Restaurant',
     'type.travel': 'Travel',
@@ -139,11 +146,11 @@ const TRANSLATIONS = {
     'type.fitness': 'Fitness',
     'type.vlog': 'Vlog',
 
-    's3.title': 'Step 3 — Check Captions',
+    's3.title': 'Check Captions',
     's3.analysis': 'View Claude Analysis',
     's3.make': 'Generate Video',
 
-    's4.title': 'Generating video...',
+    's4.title': 'Generate Video',
     's4.download': 'Download',
     's4.restart': 'Start Over',
 
@@ -166,6 +173,10 @@ const TRANSLATIONS = {
     'set.saved': 'Saved!',
     'set.reset_msg': 'Reset to default.',
 
+    'gen.analyzing': '📷 Photo Analysis',
+    'gen.generating': '✍️ Caption Gen',
+    'gen.complete': '✅ Done',
+
     'js.uploading': (n) => `Uploading ${n} file${n > 1 ? 's' : ''}...`,
     'js.uploaded': (n) => `✅ ${n} file${n > 1 ? 's' : ''} uploaded`,
     'js.adding': (n) => `Adding ${n} file${n > 1 ? 's' : ''}...`,
@@ -176,6 +187,7 @@ const TRANSLATIONS = {
     'js.generating': 'Generating captions...',
     'js.generated': 'Captions ready ✓',
     'js.confirm_clear': 'Delete all uploaded files?',
+    'js.video_generating': 'Generating video...',
     'js.done': '✅ Done!',
     'js.error': '❌ Error:',
 
@@ -196,6 +208,7 @@ const TRANSLATIONS = {
     'nav.settings': '⚙️ 設定',
     'nav.logout': 'ログアウト',
 
+    'login.caption': 'あなただけのリールを\n気軽に作ってみよう',
     'login.subtitle': '写真からリールを自動で作成しましょう',
     'login.google': 'Googleでログイン',
     'login.or': 'または',
@@ -208,19 +221,19 @@ const TRANSLATIONS = {
     'step.4': '字幕確認',
     'step.5': '動画生成',
 
-    's1.title': 'ステップ1 — 写真アップロード',
+    's1.title': 'アップロード',
     's1.drop_title': 'ドラッグ&ドロップまたはクリックしてアップロード',
     's1.drop_sub': 'JPG、PNG、MP4、MOV 複数ファイル対応',
     's1.clear': 'すべて削除',
     's1.next': '次へ →',
 
-    's15.title': 'ステップ1.5 — 順番の変更',
+    's15.title': '並び替え',
     's15.desc': 'ドラッグで並び替えや削除ができます。追加した写真は末尾に追加されます。',
     's15.add': '+ 写真を追加',
     's15.sort_time': '🕐 時間順に並べ替え',
     's15.next': '次へ →',
 
-    's2.title': 'ステップ2 — 情報入力',
+    's2.title': '情報入力',
     's2.generate': '字幕を生成',
     'type.food': 'グルメ/カフェ',
     'type.travel': '旅行/観光',
@@ -228,11 +241,11 @@ const TRANSLATIONS = {
     'type.fitness': 'フィットネス',
     'type.vlog': '日常/Vlog',
 
-    's3.title': 'ステップ3 — 字幕確認',
+    's3.title': '字幕確認',
     's3.analysis': 'Claude分析結果を見る',
     's3.make': '動画生成を開始',
 
-    's4.title': '動画生成中...',
+    's4.title': '動画生成',
     's4.download': 'ダウンロード',
     's4.restart': '最初からやり直す',
 
@@ -255,6 +268,10 @@ const TRANSLATIONS = {
     'set.saved': '保存しました！',
     'set.reset_msg': 'デフォルトに戻しました。',
 
+    'gen.analyzing': '📷 写真分析',
+    'gen.generating': '✍️ 字幕生成',
+    'gen.complete': '✅ 完了',
+
     'js.uploading': (n) => `${n}枚アップロード中...`,
     'js.uploaded': (n) => `✅ ${n}枚アップロード完了`,
     'js.adding': (n) => `${n}枚追加中...`,
@@ -265,6 +282,7 @@ const TRANSLATIONS = {
     'js.generating': '字幕生成中...',
     'js.generated': '字幕生成完了 ✓',
     'js.confirm_clear': 'アップロードしたファイルをすべて削除しますか？',
+    'js.video_generating': '動画生成中...',
     'js.done': '✅ 完了！',
     'js.error': '❌ エラー:',
 
@@ -300,7 +318,13 @@ function t(key, arg) {
 function applyTranslations() {
   document.documentElement.lang = _currentLang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.dataset.i18n);
+    const val = t(el.dataset.i18n);
+    // \n 이 포함된 경우 <br>로 변환해 innerHTML로 적용
+    if (val.includes('\n')) {
+      el.innerHTML = val.replace(/\n/g, '<br>');
+    } else {
+      el.textContent = val;
+    }
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.dataset.i18nPlaceholder);

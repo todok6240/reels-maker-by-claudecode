@@ -20,6 +20,50 @@ function unlockStep1() {
   updatePhotoTags();
 }
 
+let step15Locked = false;
+
+function lockStep15() {
+  step15Locked = true;
+  document.getElementById("btn-sort-time").style.display = "none";
+  document.getElementById("btn-add-more").style.display = "none";
+  document.getElementById("btn-to-step2").style.display = "none";
+  document.querySelectorAll("#sort-zone .btn-delete").forEach(btn => {
+    btn.style.display = "none";
+  });
+}
+
+function unlockStep15() {
+  step15Locked = false;
+  document.getElementById("btn-sort-time").style.display = "";
+  document.getElementById("btn-add-more").style.display = "";
+  document.getElementById("btn-to-step2").style.display = "";
+  document.querySelectorAll("#sort-zone .btn-delete").forEach(btn => {
+    btn.style.display = "";
+  });
+}
+
+function lockStep2() {
+  document.getElementById("btn-generate").style.display = "none";
+  document.getElementById("type-selector").classList.add("locked");
+}
+
+function unlockStep2() {
+  document.getElementById("btn-generate").style.display = "";
+  document.getElementById("btn-generate").disabled = false;
+  document.getElementById("btn-generate").textContent = t("s2.generate");
+  document.getElementById("type-selector").classList.remove("locked");
+  setGenProgress(0);
+}
+
+function lockStep3() {
+  document.getElementById("btn-make").style.display = "none";
+}
+
+function unlockStep3() {
+  document.getElementById("btn-make").style.display = "";
+  document.getElementById("btn-make").disabled = false;
+}
+
 // ── 스텝 네비게이션 ───────────────────────────────────
 const STEP_IDS = ["step1", "step1-5", "step2", "step3", "step4"];
 let maxStepReached = 0;
@@ -150,7 +194,7 @@ document.getElementById("sort-zone").addEventListener("dragover", e => {
   if (!dragSrc || !placeholder) return;
 
   const zone  = document.getElementById("sort-zone");
-  const items = [...zone.querySelectorAll(".sort-item:not(.dragging)")];
+  const items = [...zone.querySelectorAll(".sort-item")].filter(el => el !== dragSrc);
 
   let inserted = false;
   for (const item of items) {
@@ -171,6 +215,9 @@ function renderSortZone() {
     const item = makeSortItem(name, i + 1);
     zone.appendChild(item);
   });
+  if (step15Locked) {
+    zone.querySelectorAll(".btn-delete").forEach(btn => btn.style.display = "none");
+  }
 }
 
 const VIDEO_EXTS = new Set([".mp4", ".mov", ".avi", ".m4v", ".mkv"]);
@@ -215,11 +262,15 @@ function makeSortItem(name, num) {
     placeholder.style.width  = div.offsetWidth  + "px";
     placeholder.style.height = div.offsetHeight + "px";
 
-    setTimeout(() => div.classList.add("dragging"), 0);
+    // 브라우저가 드래그 이미지를 캡처한 뒤 원래 자리에 빈칸 표시
+    setTimeout(() => {
+      dragSrc.parentNode.insertBefore(placeholder, dragSrc);
+      dragSrc.style.display = "none";
+    }, 0);
   });
 
   div.addEventListener("dragend", () => {
-    div.classList.remove("dragging");
+    dragSrc.style.display = "";
     if (placeholder && placeholder.parentNode) {
       placeholder.parentNode.insertBefore(dragSrc, placeholder);
       placeholder.remove();
@@ -317,9 +368,30 @@ document.getElementById("btn-sort-time").addEventListener("click", async () => {
 // ── 1.5단계 → 2단계 이동 ─────────────────────────────
 
 document.getElementById("btn-to-step2").addEventListener("click", () => {
+  lockStep15();
   document.getElementById("step2").classList.remove("hidden");
   document.getElementById("step2").scrollIntoView({ behavior: "smooth" }); updateStepNav();
 });
+
+// ── 자막 생성 진행 상태 바 ────────────────────────────
+
+function setGenProgress(stage) {
+  // stage: 0=숨김, 1=사진분석, 2=자막생성, 3=완료
+  const prog = document.getElementById("generate-progress");
+  if (!prog) return;
+  if (stage === 0) { prog.classList.add("hidden"); return; }
+  prog.classList.remove("hidden");
+
+  const pcts = [0, 30, 65, 100];
+  document.getElementById("gen-bar-fill").style.width = pcts[stage] + "%";
+
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById(`gstage-${i}`);
+    el.classList.remove("active", "done");
+    if (i === stage) el.classList.add("active");
+    else if (i < stage) el.classList.add("done");
+  });
+}
 
 // ── 자막 생성 (분석 → 생성 통합) ────────────────────
 
@@ -327,54 +399,64 @@ document.getElementById("btn-generate").addEventListener("click", async () => {
   const btn = document.getElementById("btn-generate");
   btn.disabled = true;
 
-  btn.textContent = t("js.analyzing");
-  const analyzeRes = await fetch("/api/analyze", { method: "POST" });
-  const analyzeData = await analyzeRes.json();
-  if (analyzeData.error) {
-    alert(analyzeData.error);
+  try {
+    setGenProgress(1);
+    const analyzeRes = await fetch("/api/analyze", { method: "POST" });
+    const analyzeData = await analyzeRes.json();
+    if (analyzeData.error) {
+      alert(analyzeData.error);
+      setGenProgress(0);
+      return;
+    }
+    analysisData = analyzeData.analysis;
+    document.getElementById("analysis-result").textContent = analysisData;
+
+    setGenProgress(2);
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name:         document.getElementById("name").value,
+        location:     document.getElementById("location").value,
+        price:        document.getElementById("price").value,
+        review:       document.getElementById("review").value,
+        analysis:     analysisData,
+        content_type: contentType,
+      })
+    });
+    const data = await res.json();
+
+    setGenProgress(3);
+
+    const thumbSrc = name => isVideo(name)
+      ? `/api/thumbnail/${encodeURIComponent(name)}`
+      : `/api/photo/${encodeURIComponent(name)}`;
+
+    document.getElementById("captions-list").innerHTML = data.captions.map((c, i) => `
+      <div class="caption-item">
+        <span class="caption-num">${i + 1}</span>
+        <img class="caption-thumb" src="${thumbSrc(data.photos[i])}" alt="${data.photos[i]}">
+        <input class="caption-input" data-index="${i}" value="${c}">
+      </div>
+    `).join("");
+
+    lockStep2();
+    document.getElementById("step3").classList.remove("hidden");
+    document.getElementById("step3").scrollIntoView({ behavior: "smooth" }); updateStepNav();
+
+  } catch (err) {
+    // 오류 발생 시 버튼 복구
     btn.disabled = false;
     btn.textContent = t("s2.generate");
-    return;
+    setGenProgress(0);
+    alert("오류가 발생했어요: " + err.message);
   }
-  analysisData = analyzeData.analysis;
-  document.getElementById("analysis-result").textContent = analysisData;
-
-  btn.textContent = t("js.generating");
-  const res = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name:         document.getElementById("name").value,
-      location:     document.getElementById("location").value,
-      price:        document.getElementById("price").value,
-      review:       document.getElementById("review").value,
-      analysis:     analysisData,
-      content_type: contentType,
-    })
-  });
-  const data = await res.json();
-
-  const thumbSrc = name => isVideo(name)
-    ? `/api/thumbnail/${encodeURIComponent(name)}`
-    : `/api/photo/${encodeURIComponent(name)}`;
-
-  document.getElementById("captions-list").innerHTML = data.captions.map((c, i) => `
-    <div class="caption-item">
-      <span class="caption-num">${i + 1}</span>
-      <img class="caption-thumb" src="${thumbSrc(data.photos[i])}" alt="${data.photos[i]}">
-      <input class="caption-input" data-index="${i}" value="${c}">
-    </div>
-  `).join("");
-
-  document.getElementById("step3").classList.remove("hidden");
-  document.getElementById("step3").scrollIntoView({ behavior: "smooth" }); updateStepNav();
-  btn.textContent = t("js.generated");
 });
 
 // ── 영상 생성 ─────────────────────────────────────────
 
 document.getElementById("btn-make").addEventListener("click", async () => {
-  document.getElementById("btn-make").disabled = true;
+  lockStep3();
   const captions = [...document.querySelectorAll(".caption-input")].map(el => el.value);
 
   await fetch("/api/make", {
@@ -401,8 +483,8 @@ document.getElementById("btn-make").addEventListener("click", async () => {
 
 async function pollProgress() {
   const data = await (await fetch("/api/progress")).json();
-  document.getElementById("progress-msg").textContent = data.message;
   if (data.status === "running") {
+    document.getElementById("progress-msg").textContent = t("js.video_generating");
     document.getElementById("progress-fill").style.width = "70%";
     setTimeout(pollProgress, 2000);
   } else if (data.status === "done") {
@@ -411,7 +493,9 @@ async function pollProgress() {
     if (data.video_url) {
       const video = document.getElementById("result-video");
       video.src = data.video_url;
-      document.getElementById("btn-download").href = data.video_url;
+      const dlBtn = document.getElementById("btn-download");
+      dlBtn.href = data.video_url;
+      dlBtn.download = data.video_url.split("/").pop();
       document.getElementById("result-box").classList.remove("hidden");
       document.getElementById("restart-wrap").classList.remove("hidden");
     }
@@ -427,6 +511,9 @@ document.getElementById("btn-restart").addEventListener("click", async () => {
   maxStepReached = 0;
   photosData = [];
   unlockStep1();
+  unlockStep15();
+  unlockStep2();
+  unlockStep3();
   renderSortZone();
   updatePhotoTags();
   document.getElementById("btn-next").disabled = true;

@@ -15,31 +15,52 @@
   </script>
 </head>
 <body class="login-body">
-  <div class="login-card">
-    <div class="login-logo">🎬</div>
-    <h1 class="login-title">ReelsShortsMaker</h1>
-    <p class="login-sub" data-i18n="login.subtitle">사진으로 릴스를 자동으로 만들어보세요</p>
 
-    <div class="login-actions">
-      <a href="/auth/google" class="btn-login btn-google">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
-        <span data-i18n="login.google">Google로 로그인</span>
-      </a>
+  <div class="login-split">
 
-      <div class="login-divider"><span data-i18n="login.or">또는</span></div>
-
-      <form action="/auth/guest" method="post">
-        <button type="submit" class="btn-login btn-guest" data-i18n="login.guest">게스트로 시작하기</button>
-      </form>
+    <!-- 왼쪽: 이미지 영역 -->
+    <div class="login-visual">
+      {% if login_bg %}
+        <img src="{{ url_for('static', filename='images/' + login_bg) }}" alt="cover" class="login-visual-img">
+      {% else %}
+        <div class="login-visual-placeholder"></div>
+      {% endif %}
+      <div class="login-visual-caption">
+        <p data-i18n="login.caption">나만의 릴스를<br>편하게 만들어 보세요</p>
+      </div>
     </div>
 
-    <p class="login-notice" data-i18n="login.notice">게스트 로그인은 브라우저를 닫으면 기록이 사라져요</p>
+    <!-- 오른쪽: 로그인 폼 -->
+    <div class="login-panel">
+      <div class="login-panel-inner">
+        <div class="login-logo">🎬</div>
+        <h1 class="login-title">ReelsShortsMaker</h1>
+        <p class="login-sub" data-i18n="login.subtitle">사진으로 릴스를 자동으로 만들어보세요</p>
 
-    <div class="lang-switcher" style="justify-content: center; margin-top: 20px;">
-      <button class="lang-btn" data-lang="ko">한국어</button>
-      <button class="lang-btn" data-lang="en">EN</button>
-      <button class="lang-btn" data-lang="ja">日本語</button>
+        <div class="login-actions">
+          <a href="/auth/google" class="btn-login btn-google">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
+            <span data-i18n="login.google">Google로 로그인</span>
+          </a>
+
+          <div class="login-divider"><span data-i18n="login.or">또는</span></div>
+
+          <form action="/auth/guest" method="post">
+            <button type="submit" class="btn-login btn-guest" data-i18n="login.guest">게스트로 시작하기</button>
+          </form>
+        </div>
+
+        <p class="login-notice" data-i18n="login.notice">게스트 로그인은 브라우저를 닫으면 기록이 사라져요</p>
+
+        <div class="lang-switcher" style="justify-content: center; margin-top: 28px;">
+          <button class="lang-btn" data-lang="ko">한국어</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="ja">日本語</button>
+        </div>
+      </div>
     </div>
+
   </div>
+
 </body>
 </html>
