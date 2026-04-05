@@ -20,10 +20,10 @@
     <div class="nav-left">
       <a href="/" class="nav-logo">🎬 rsMaker</a>
       {% if current_user and current_user.type == 'google' %}
-      <a href="/history" class="nav-links-item" data-i18n="nav.history">과거 생성 히스토리</a>
+      <a href="/history" class="nav-links-item nav-desktop-only" data-i18n="nav.history">과거 생성 히스토리</a>
       {% endif %}
     </div>
-    <div class="nav-right">
+    <div class="nav-right nav-desktop-only">
       <div class="lang-switcher">
         <button class="lang-btn" data-lang="ko">한국어</button>
         <button class="lang-btn" data-lang="en">EN</button>
@@ -49,7 +49,24 @@
         <a href="/auth/logout" class="nav-logout" data-i18n="nav.logout">로그아웃</a>
       {% endif %}
     </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="메뉴">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+  <div class="nav-mobile-menu" id="nav-mobile-menu">
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="ko">한국어</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="ja">日本語</button>
+    </div>
+    {% if current_user %}
+      {% if current_user.type == 'google' %}
+      <a href="/history" class="nav-mobile-item" data-i18n="nav.history">과거 생성 히스토리</a>
+      {% endif %}
+      <a href="/settings" class="nav-mobile-item" data-i18n="nav.settings">⚙️ 설정</a>
+      <a href="/auth/logout" class="nav-mobile-item" data-i18n="nav.logout">로그아웃</a>
+    {% endif %}
+  </div>
   <main>
     {% block content %}{% endblock %}
   </main>

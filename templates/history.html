@@ -19,12 +19,12 @@
       <tbody>
         {% for r in rows %}
         <tr>
-          <td>{{ r.name }}</td>
-          <td>{{ r.location }}</td>
-          <td>{{ r.price }}</td>
-          <td>{{ r.photo_count or '-' }}</td>
-          <td>{{ r.created_at }}</td>
-          <td>
+          <td data-label="타이틀">{{ r.name }}</td>
+          <td data-label="위치">{{ r.location }}</td>
+          <td data-label="가격대">{{ r.price }}</td>
+          <td data-label="사진 수">{{ r.photo_count or '-' }}</td>
+          <td data-label="생성일">{{ r.created_at }}</td>
+          <td data-label="다운로드">
             {% if r.reel_id and r.output_path %}
               <a href="/download/{{ r.reel_id }}" class="btn btn-outline-primary" style="font-size:0.82rem; padding:6px 14px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="hist.download">다운로드</span>

@@ -1,3 +1,14 @@
+// 햄버거 메뉴 토글
+document.addEventListener("DOMContentLoaded", () => {
+  const hamburger = document.getElementById("nav-hamburger");
+  const mobileMenu = document.getElementById("nav-mobile-menu");
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener("click", () => {
+      mobileMenu.classList.toggle("open");
+    });
+  }
+});
+
 let analysisData = "";
 let photosData = [];
 let dragSrc = null;
