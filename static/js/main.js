@@ -494,8 +494,8 @@ async function pollProgress() {
       const video = document.getElementById("result-video");
       video.src = data.video_url;
       const dlBtn = document.getElementById("btn-download");
-      dlBtn.href = data.video_url;
-      dlBtn.download = data.video_url.split("/").pop();
+      dlBtn.href = data.download_url || data.video_url;
+      dlBtn.download = "reels.mp4";
       document.getElementById("result-box").classList.remove("hidden");
       document.getElementById("restart-wrap").classList.remove("hidden");
     }

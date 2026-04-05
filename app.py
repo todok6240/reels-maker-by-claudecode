@@ -256,6 +256,28 @@ def download_reel(reel_id):
     return send_from_directory(directory, filename, as_attachment=True)
 
 
+@app.route("/stream/<int:reel_id>")
+@login_required
+def stream_reel(reel_id):
+    user_id = get_user_id()
+    owner = get_reel_owner(reel_id)
+    if owner is None or owner != user_id:
+        abort(403)
+
+    path = get_reel_path(reel_id)
+    if not path or not os.path.exists(path):
+        return "파일을 찾을 수 없습니다.", 404
+
+    real_path = os.path.realpath(path)
+    real_base = os.path.realpath(OUTPUT_DIR)
+    if not real_path.startswith(real_base + os.sep):
+        abort(403)
+
+    directory = os.path.dirname(path)
+    filename  = os.path.basename(path)
+    return send_from_directory(directory, filename, mimetype="video/mp4")
+
+
 @app.route("/api/session")
 def api_session():
     sid = get_session_id()
@@ -450,15 +472,12 @@ def api_make():
     def run():
         set_progress(sid, {"status": "running", "message": ""})
         try:
-            make_reels(name, location, price, review, analysis, photos, captions,
+            output_path = make_reels(name, location, price, review, analysis, photos, captions,
                        output_dir=out_dir)
             restaurant_id = save_restaurant(user_id, name, location, price, review)
-            safe_name = secure_filename(name) or "reels"
-            output_path = os.path.join(out_dir, f"{safe_name}_reels.mp4")
             reel_id = save_reel(restaurant_id, output_path, len(photos), user_id)
             save_captions(reel_id, photos, captions)
-            video_url = f"/output/{sid}/{safe_name}_reels.mp4"
-            set_progress(sid, {"status": "done", "message": "", "video_url": video_url})
+            set_progress(sid, {"status": "done", "message": "", "video_url": f"/stream/{reel_id}", "download_url": f"/download/{reel_id}"})
         except Exception as e:
             logging.error("영상 생성 실패: %s", e, exc_info=True)
             set_progress(sid, {"status": "error", "message": str(e)})

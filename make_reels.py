@@ -14,6 +14,11 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from database import init_db, save_restaurant, save_reel, save_captions
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
 from moviepy import ImageSequenceClip, AudioFileClip, concatenate_videoclips
 import numpy as np
 
@@ -497,6 +502,7 @@ def make_reels(name: str, location: str, price: str, review: str,
     logging.info("write_videofile 완료 (%.1fs)", time.time() - t1)
 
     print(f"\n✅ 완료! 저장 위치: {output_path}")
+    return output_path
 
     # CLI 실행 시에만 DB 직접 저장 (웹은 app.py에서 처리)
     if output_dir is None:
