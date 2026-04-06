@@ -77,42 +77,42 @@ google_oauth = oauth.register(
 ADMIN_EMAILS = {"todok6240@gmail.com"}
 
 TEMPLATES = {
-    "food": {
-        "name": "맛집/카페",
-        "emoji": "🍜",
-        "desc": "음식, 카페, 맛집 방문 후기",
-        "gradient": "linear-gradient(135deg, #ff6b6b, #ee0979)",
-        "accent": "#E52828",
+    "classic": {
+        "name": "클래식",
+        "emoji": "🎬",
+        "desc": "상단 자막 · 레드 포인트\n정통 SNS 릴스 스타일",
+        "gradient": "linear-gradient(135deg, #e63946, #c1121f)",
+        "accent": "#e63946",
         "visual": {"accent_color": [220, 40, 40], "text_position": "top", "overlay_opacity": 210},
     },
-    "travel": {
-        "name": "여행/관광",
-        "emoji": "✈️",
-        "desc": "여행지, 관광명소, 풍경 기록",
+    "modern": {
+        "name": "모던",
+        "emoji": "✨",
+        "desc": "하단 자막 · 블루 포인트\n감성적인 라이프스타일 스타일",
         "gradient": "linear-gradient(135deg, #667eea, #764ba2)",
         "accent": "#667eea",
         "visual": {"accent_color": [102, 126, 234], "text_position": "bottom", "overlay_opacity": 200},
     },
-    "product": {
-        "name": "상품 리뷰",
-        "emoji": "🛍️",
-        "desc": "제품, 쇼핑, 언박싱 리뷰",
+    "elegant": {
+        "name": "엘레강스",
+        "emoji": "🌸",
+        "desc": "상단 자막 · 퍼플 포인트\n고급스럽고 세련된 스타일",
         "gradient": "linear-gradient(135deg, #a18cd1, #fbc2eb)",
         "accent": "#7B2FBE",
         "visual": {"accent_color": [123, 47, 190], "text_position": "top", "overlay_opacity": 200},
     },
-    "fitness": {
-        "name": "운동/헬스",
-        "emoji": "💪",
-        "desc": "헬스장, 운동 루틴, 다이어트",
+    "energy": {
+        "name": "에너지",
+        "emoji": "⚡",
+        "desc": "상단 자막 · 오렌지 포인트\n강렬하고 역동적인 스타일",
         "gradient": "linear-gradient(135deg, #f7971e, #ffd200)",
         "accent": "#E56A00",
-        "visual": {"accent_color": [229, 106, 0], "text_position": "top", "overlay_opacity": 210},
+        "visual": {"accent_color": [229, 106, 0], "text_position": "top", "overlay_opacity": 220},
     },
-    "vlog": {
-        "name": "일상/브이로그",
-        "emoji": "🎬",
-        "desc": "일상, 감성 브이로그, 데일리",
+    "fresh": {
+        "name": "프레시",
+        "emoji": "🌿",
+        "desc": "하단 자막 · 그린 포인트\n자연스럽고 청량한 스타일",
         "gradient": "linear-gradient(135deg, #11998e, #38ef7d)",
         "accent": "#1B9E6B",
         "visual": {"accent_color": [27, 158, 107], "text_position": "bottom", "overlay_opacity": 190},
@@ -308,9 +308,9 @@ def index():
 @app.route("/make")
 @login_required
 def make():
-    template_id = request.args.get("t", "food")
+    template_id = request.args.get("t", "classic")
     if template_id not in TEMPLATES:
-        template_id = "food"
+        template_id = "classic"
     get_session_id()
     return render_template("index.html", template_id=template_id, tmpl=TEMPLATES[template_id])
 
@@ -566,7 +566,8 @@ def api_make():
     analysis     = data.get("analysis", "")
     captions     = data.get("captions", [])
     order        = data.get("order", [])
-    content_type = data.get("content_type", "food")
+    template_id  = data.get("template_id", "classic")   # 영상 비주얼 템플릿
+    content_type = data.get("content_type", "food")      # 자막 프롬프트 타입
 
     photos = get_session_photos(sid)
     if order:
@@ -576,7 +577,7 @@ def api_make():
 
     ai_captions_raw = _redis.get(f"ai_captions:{sid}")
     ai_captions = json.loads(ai_captions_raw) if ai_captions_raw else None
-    visual = TEMPLATES.get(content_type, TEMPLATES["food"])["visual"]
+    visual = TEMPLATES.get(template_id, TEMPLATES["classic"])["visual"]
 
     def run():
         set_progress(sid, {"status": "running", "message": ""})

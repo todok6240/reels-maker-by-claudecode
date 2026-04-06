@@ -11,7 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let analysisData = "";
 let photosData = [];
-let contentType = (typeof window.TEMPLATE_ID !== "undefined" && window.TEMPLATE_ID) ? window.TEMPLATE_ID : "food";
+let contentType  = "food";   // 자막 AI 프롬프트 타입 (type-selector로 변경)
+let templateId   = (typeof window.TEMPLATE_ID !== "undefined" && window.TEMPLATE_ID) ? window.TEMPLATE_ID : "classic";  // 영상 비주얼 템플릿
 let sortableInstance = null;
 let step1Locked = false;
 
@@ -129,6 +130,7 @@ const CONTENT_TYPE_SHOW_PRICE = {
 
 document.querySelectorAll(".type-card").forEach(btn => {
   btn.addEventListener("click", () => {
+    if (document.getElementById("type-selector")?.classList.contains("locked")) return;
     document.querySelectorAll(".type-card").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     contentType = btn.dataset.type;
@@ -412,6 +414,7 @@ document.getElementById("btn-generate").addEventListener("click", async () => {
         review:       document.getElementById("review").value,
         analysis:     analysisData,
         content_type: contentType,
+        template_id:  templateId,
       })
     });
     const data = await res.json();
@@ -460,6 +463,7 @@ document.getElementById("btn-make").addEventListener("click", async () => {
       analysis:     analysisData,
       captions:     captions,
       content_type: contentType,
+      template_id:  templateId,
     })
   });
 

@@ -1,10 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
 <script>
-  window.TEMPLATE_ID   = "{{ template_id }}";
-  window.TEMPLATE_NAME = "{{ tmpl.name }}";
+  window.TEMPLATE_ID    = "{{ template_id }}";
   window.TEMPLATE_ACCENT = "{{ tmpl.accent }}";
 </script>
+
+<!-- 대시보드로 돌아가기 버튼 -->
+<a href="/" class="btn-back-dash">← 대시보드</a>
+
+<!-- 오른쪽 템플릿 프리뷰 패널 -->
+<div class="tmpl-preview-panel">
+  <div class="tmpl-preview-heading">선택한 템플릿</div>
+  <div class="tmpl-emoji-label">{{ tmpl.emoji }}</div>
+  <div class="tmpl-name-label">{{ tmpl.name }}</div>
+  <div class="tmpl-preview-phone">
+    <div class="tmpl-preview-screen">
+      <!-- 그라디언트 오버레이 (상단 또는 하단) -->
+      <div class="tmpl-preview-overlay {{ tmpl.visual.text_position }}"
+           style="background: linear-gradient({% if tmpl.visual.text_position == 'top' %}to bottom{% else %}to top{% endif %}, {{ tmpl.accent }}cc, transparent)"></div>
+      <!-- 자막 텍스트 바 -->
+      <div class="tmpl-preview-text-bar {{ tmpl.visual.text_position }}"></div>
+      <!-- 위치 뱃지 목업 -->
+      <div class="tmpl-preview-badge-mock">
+        <div class="tmpl-preview-badge-bar" style="background: {{ tmpl.accent }}"></div>
+        <div class="tmpl-preview-badge-lines">
+          <div class="tmpl-preview-badge-line"></div>
+          <div class="tmpl-preview-badge-line" style="width:60%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tmpl-preview-meta">
+    <div class="tmpl-preview-meta-row">
+      <span class="tmpl-preview-meta-label">자막 위치</span>
+      <span class="tmpl-preview-meta-val">{{ '상단' if tmpl.visual.text_position == 'top' else '하단' }}</span>
+    </div>
+    <div class="tmpl-preview-meta-row">
+      <span class="tmpl-preview-meta-label">포인트</span>
+      <span class="tmpl-preview-swatch" style="background: {{ tmpl.accent }}"></span>
+    </div>
+  </div>
+</div>
 
 <div class="page-layout">
 
@@ -96,12 +132,21 @@
   <!-- Step 2: 정보 입력 -->
   <section class="card hidden" id="step2">
     <div class="step2-header">
-      <h2 data-i18n="s2.title">2단계 — 정보 입력</h2>
+      <h2 data-i18n="s2.title">3단계 — 정보 입력</h2>
       <a href="/" class="tmpl-badge" style="--accent: {{ tmpl.accent }}">
         <span>{{ tmpl.emoji }}</span>
         <span>{{ tmpl.name }}</span>
         <span class="tmpl-badge-change">변경</span>
       </a>
+    </div>
+
+    <!-- 콘텐츠 유형 선택 (자막 AI 프롬프트 타입) -->
+    <div class="type-selector" id="type-selector">
+      <button class="type-card active" data-type="food">🍜<span data-i18n="type.food">맛집/카페</span></button>
+      <button class="type-card" data-type="travel">✈️<span data-i18n="type.travel">여행/관광</span></button>
+      <button class="type-card" data-type="product">🛍️<span data-i18n="type.product">상품 리뷰</span></button>
+      <button class="type-card" data-type="fitness">💪<span data-i18n="type.fitness">운동/헬스</span></button>
+      <button class="type-card" data-type="vlog">🎬<span data-i18n="type.vlog">일상/브이로그</span></button>
     </div>
 
     <div class="form-group">
@@ -137,7 +182,7 @@
 
   <!-- Step 3: 자막 확인 & 영상 생성 -->
   <section class="card hidden" id="step3">
-    <h2 data-i18n="s3.title">3단계 — 자막 확인 & 영상 생성</h2>
+    <h2 data-i18n="s3.title">4단계 — 자막 확인 & 영상 생성</h2>
 
     <!-- 분석 결과 접기/펼치기 -->
     <details class="analysis-details" id="analysis-details">

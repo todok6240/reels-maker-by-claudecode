@@ -657,6 +657,157 @@ nav {
   .result-video { max-width: 100%; }
 }
 
+/* ── 대시보드로 돌아가기 버튼 ───────────────────────────── */
+.btn-back-dash {
+  position: fixed;
+  top: 72px;
+  left: 14px;
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+.btn-back-dash:hover {
+  background: #fff;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.13);
+}
+@media (max-width: 860px) { .btn-back-dash { display: none; } }
+
+/* ── 오른쪽 템플릿 프리뷰 패널 ───────────────────────── */
+.tmpl-preview-panel {
+  position: fixed;
+  top: 90px;
+  right: 28px;
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+}
+@media (max-width: 1160px) { .tmpl-preview-panel { display: none; } }
+
+.tmpl-preview-heading {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tmpl-emoji-label { font-size: 1.5rem; line-height: 1; }
+.tmpl-name-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.tmpl-preview-phone {
+  width: 80px;
+  height: 142px;
+  border-radius: 12px;
+  background: #d0d0d0;
+  padding: 4px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.tmpl-preview-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: linear-gradient(160deg, #c8c8c8 0%, #a0a0a0 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 그라디언트 오버레이 (상단/하단) */
+.tmpl-preview-overlay {
+  position: absolute;
+  left: 0; right: 0;
+  height: 50%;
+  pointer-events: none;
+}
+.tmpl-preview-overlay.top    { top: 0; }
+.tmpl-preview-overlay.bottom { bottom: 0; }
+
+/* 자막 텍스트 바 */
+.tmpl-preview-text-bar {
+  position: absolute;
+  left: 7px; right: 7px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.88);
+}
+.tmpl-preview-text-bar.top    { top: 20px; }
+.tmpl-preview-text-bar.bottom { bottom: 20px; }
+
+/* 위치 뱃지 목업 */
+.tmpl-preview-badge-mock {
+  position: absolute;
+  top: 6px;
+  left: 5px;
+  background: rgba(0,0,0,0.48);
+  border-radius: 3px;
+  width: 34px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  padding: 2px 3px;
+  gap: 3px;
+}
+.tmpl-preview-badge-bar {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.tmpl-preview-badge-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.tmpl-preview-badge-line {
+  background: rgba(255,255,255,0.75);
+  height: 2px;
+  border-radius: 1px;
+  width: 100%;
+}
+
+/* 프리뷰 하단 메타 정보 */
+.tmpl-preview-meta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 4px;
+}
+.tmpl-preview-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+.tmpl-preview-meta-label { color: #aaa; }
+.tmpl-preview-meta-val { color: #555; font-weight: 600; }
+.tmpl-preview-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* ── 대시보드 ─────────────────────────────────────────── */
 .dashboard-wrap {
   max-width: 1000px;
