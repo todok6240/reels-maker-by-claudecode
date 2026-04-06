@@ -245,8 +245,10 @@ def draw_caption(img: Image.Image, text: str) -> Image.Image:
 
     draw = ImageDraw.Draw(img)
 
+    _base_dir = os.path.dirname(os.path.abspath(__file__))
     font_paths = [
-        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",  # 이사만루체
+        os.path.join(_base_dir, "static/fonts/esamanru OTF Bold.otf"),
+        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",
         "/System/Library/Fonts/AppleSDGothicNeo.ttc",
         "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
     ]
@@ -304,8 +306,10 @@ def draw_location_badge(img: Image.Image, name: str, location: str) -> Image.Ima
     w, h = img.size
     draw = ImageDraw.Draw(img)
 
+    _base_dir = os.path.dirname(os.path.abspath(__file__))
     font_paths = [
-        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",  # 이사만루체
+        os.path.join(_base_dir, "static/fonts/esamanru OTF Bold.otf"),
+        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",
         "/System/Library/Fonts/AppleSDGothicNeo.ttc",
         "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
     ]

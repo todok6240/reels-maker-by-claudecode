@@ -49,6 +49,10 @@ app.secret_key = _secret
 
 CACHE_VER = str(int(_time.time()))
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.static_folder, 'favicon.svg', mimetype='image/svg+xml')
+
 @app.context_processor
 def inject_cache_ver():
     return {"cache_ver": CACHE_VER, "current_user": session.get("user")}
