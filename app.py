@@ -67,11 +67,22 @@ google_oauth = oauth.register(
     client_kwargs={"scope": "openid email profile"},
 )
 
+ADMIN_EMAILS = {"todok6240@gmail.com"}
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user" not in session:
             return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = session.get("user")
+        if not user or user.get("email") not in ADMIN_EMAILS:
+            abort(403)
         return f(*args, **kwargs)
     return decorated
 
@@ -139,9 +150,14 @@ def get_session_photos(sid):
                   "*.mp4", "*.mov", "*.avi", "*.m4v", "*.mkv", "*.3gp",
                   "*.JPG", "*.JPEG", "*.PNG", "*.MP4", "*.MOV")
     photos_dir = session_photos_dir(sid)
+    seen = set()
     photos = []
     for ext in media_exts:
-        photos.extend(glob.glob(os.path.join(photos_dir, ext)))
+        for p in glob.glob(os.path.join(photos_dir, ext)):
+            norm = os.path.normcase(p)
+            if norm not in seen:
+                seen.add(norm)
+                photos.append(p)
 
     # Redis에 저장된 순서가 있으면 그 순서대로 반환
     saved_order_raw = _redis.get(f"photo_order:{sid}")
@@ -531,6 +547,27 @@ def output_file(sid, filename):
     out_dir = os.path.join(OUTPUT_DIR, sid)
     _, safe_name = safe_join_check(out_dir, filename)
     return send_from_directory(out_dir, safe_name)
+
+
+@app.route("/admin")
+@admin_required
+def admin():
+    conn = __import__("database").get_conn()
+    stats = {
+        "total_reels":       conn.execute("SELECT COUNT(*) FROM reels").fetchone()[0],
+        "total_restaurants": conn.execute("SELECT COUNT(*) FROM restaurants").fetchone()[0],
+        "total_users":       conn.execute("SELECT COUNT(DISTINCT owner_id) FROM reels WHERE owner_id NOT LIKE '________-____-____-____-____________'").fetchone()[0],
+    }
+    reels = conn.execute("""
+        SELECT r.name, r.location, r.price, r.created_at,
+               rl.id AS reel_id, rl.photo_count, rl.owner_id
+        FROM restaurants r
+        LEFT JOIN reels rl ON rl.restaurant_id = r.id
+        ORDER BY r.created_at DESC
+        LIMIT 100
+    """).fetchall()
+    conn.close()
+    return render_template("admin.html", stats=stats, reels=[dict(r) for r in reels])
 
 
 if __name__ == "__main__":

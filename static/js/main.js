@@ -11,9 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let analysisData = "";
 let photosData = [];
-let dragSrc = null;
-let placeholder = null;
 let contentType = "food";
+let sortableInstance = null;
 let step1Locked = false;
 
 function lockStep1() {
@@ -196,28 +195,25 @@ document.getElementById("btn-next").addEventListener("click", () => {
   lockStep1();
   document.getElementById("step1-5").classList.remove("hidden");
   document.getElementById("step1-5").scrollIntoView({ behavior: "smooth" }); updateStepNav();
+  initSortable();
 });
 
 // ── 정렬 존 렌더링 ────────────────────────────────────
 
-document.getElementById("sort-zone").addEventListener("dragover", e => {
-  e.preventDefault();
-  if (!dragSrc || !placeholder) return;
-
-  const zone  = document.getElementById("sort-zone");
-  const items = [...zone.querySelectorAll(".sort-item")].filter(el => el !== dragSrc);
-
-  let inserted = false;
-  for (const item of items) {
-    const rect = item.getBoundingClientRect();
-    if (e.clientX < rect.left + rect.width / 2) {
-      zone.insertBefore(placeholder, item);
-      inserted = true;
-      break;
-    }
-  }
-  if (!inserted) zone.appendChild(placeholder);
-});
+function initSortable() {
+  const zone = document.getElementById("sort-zone");
+  if (sortableInstance) sortableInstance.destroy();
+  sortableInstance = Sortable.create(zone, {
+    animation: 150,
+    delay: 150,
+    delayOnTouchOnly: true,
+    touchStartThreshold: 5,
+    swapThreshold: 0.3,
+    ghostClass: "sort-ghost",
+    chosenClass: "sort-chosen",
+    onEnd() { updateOrderFromDOM(); }
+  });
+}
 
 function renderSortZone() {
   const zone = document.getElementById("sort-zone");
@@ -229,6 +225,10 @@ function renderSortZone() {
   if (step15Locked) {
     zone.querySelectorAll(".btn-delete").forEach(btn => btn.style.display = "none");
   }
+  // step1-5가 보이는 상태일 때만 Sortable 초기화
+  if (!document.getElementById("step1-5").classList.contains("hidden")) {
+    initSortable();
+  }
 }
 
 const VIDEO_EXTS = new Set([".mp4", ".mov", ".avi", ".m4v", ".mkv"]);
@@ -239,7 +239,6 @@ function isVideo(name) {
 function makeSortItem(name, num) {
   const div = document.createElement("div");
   div.className = "sort-item";
-  div.draggable = true;
   div.dataset.name = name;
 
   const thumbSrc = isVideo(name)
@@ -262,95 +261,6 @@ function makeSortItem(name, num) {
     photosData = photosData.filter(p => p !== name);
     renderSortZone();
     updatePhotoTags();
-  });
-
-  div.addEventListener("dragstart", e => {
-    dragSrc = div;
-    e.dataTransfer.effectAllowed = "move";
-
-    placeholder = document.createElement("div");
-    placeholder.className = "sort-placeholder";
-    placeholder.style.width  = div.offsetWidth  + "px";
-    placeholder.style.height = div.offsetHeight + "px";
-
-    // 브라우저가 드래그 이미지를 캡처한 뒤 원래 자리에 빈칸 표시
-    setTimeout(() => {
-      dragSrc.parentNode.insertBefore(placeholder, dragSrc);
-      dragSrc.style.display = "none";
-    }, 0);
-  });
-
-  div.addEventListener("dragend", () => {
-    dragSrc.style.display = "";
-    if (placeholder && placeholder.parentNode) {
-      placeholder.parentNode.insertBefore(dragSrc, placeholder);
-      placeholder.remove();
-    }
-    placeholder = null;
-    dragSrc = null;
-    updateOrderFromDOM();
-  });
-
-  // ── 터치 드래그 (모바일) ──────────────────────────────
-  div.addEventListener("touchstart", e => {
-    if (step1Locked) return;
-    dragSrc = div;
-    const touch = e.touches[0];
-
-    placeholder = document.createElement("div");
-    placeholder.className = "sort-placeholder";
-    placeholder.style.width  = div.offsetWidth  + "px";
-    placeholder.style.height = div.offsetHeight + "px";
-    div.parentNode.insertBefore(placeholder, div);
-
-    div.style.position = "fixed";
-    div.style.zIndex   = "1000";
-    div.style.opacity  = "0.8";
-    div.style.width    = div.offsetWidth + "px";
-    div.style.left     = touch.clientX - div.offsetWidth / 2 + "px";
-    div.style.top      = touch.clientY - div.offsetHeight / 2 + "px";
-    div.style.pointerEvents = "none";
-  }, { passive: true });
-
-  div.addEventListener("touchmove", e => {
-    if (!dragSrc || dragSrc !== div) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-
-    div.style.left = touch.clientX - div.offsetWidth / 2 + "px";
-    div.style.top  = touch.clientY - div.offsetHeight / 2 + "px";
-
-    const zone  = document.getElementById("sort-zone");
-    const items = [...zone.querySelectorAll(".sort-item")].filter(el => el !== div);
-    let inserted = false;
-    for (const item of items) {
-      const rect = item.getBoundingClientRect();
-      if (touch.clientY < rect.top + rect.height / 2) {
-        zone.insertBefore(placeholder, item);
-        inserted = true;
-        break;
-      }
-    }
-    if (!inserted) zone.appendChild(placeholder);
-  }, { passive: false });
-
-  div.addEventListener("touchend", () => {
-    if (!dragSrc || dragSrc !== div) return;
-    div.style.position    = "";
-    div.style.zIndex      = "";
-    div.style.opacity     = "";
-    div.style.width       = "";
-    div.style.left        = "";
-    div.style.top         = "";
-    div.style.pointerEvents = "";
-
-    if (placeholder && placeholder.parentNode) {
-      placeholder.parentNode.insertBefore(div, placeholder);
-      placeholder.remove();
-    }
-    placeholder = null;
-    dragSrc = null;
-    updateOrderFromDOM();
   });
 
   return div;

@@ -254,6 +254,15 @@ nav {
   transition: transform 0.15s ease;
 }
 .sort-item.dragging { opacity: 0; cursor: grabbing; }
+.sort-item.sort-ghost {
+  opacity: 1;
+  outline: 1.5px dotted var(--color-primary);
+  outline-offset: -1px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.6);
+}
+.sort-item.sort-ghost > * { visibility: hidden; }
+.sort-item.sort-chosen { cursor: grabbing; box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
 
 .sort-placeholder {
   flex-shrink: 0;
