@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
+<script>
+  window.TEMPLATE_ID   = "{{ template_id }}";
+  window.TEMPLATE_NAME = "{{ tmpl.name }}";
+  window.TEMPLATE_ACCENT = "{{ tmpl.accent }}";
+</script>
 
 <div class="page-layout">
 
@@ -90,15 +95,13 @@
 
   <!-- Step 2: 정보 입력 -->
   <section class="card hidden" id="step2">
-    <h2 data-i18n="s2.title">2단계 — 정보 입력</h2>
-
-    <!-- 콘텐츠 유형 선택 -->
-    <div class="type-selector" id="type-selector">
-      <button class="type-card active" data-type="food">🍜<span data-i18n="type.food">맛집/카페</span></button>
-      <button class="type-card" data-type="travel">✈️<span data-i18n="type.travel">여행/관광</span></button>
-      <button class="type-card" data-type="product">🛍️<span data-i18n="type.product">상품 리뷰</span></button>
-      <button class="type-card" data-type="fitness">💪<span data-i18n="type.fitness">운동/헬스</span></button>
-      <button class="type-card" data-type="vlog">🎬<span data-i18n="type.vlog">일상/브이로그</span></button>
+    <div class="step2-header">
+      <h2 data-i18n="s2.title">2단계 — 정보 입력</h2>
+      <a href="/" class="tmpl-badge" style="--accent: {{ tmpl.accent }}">
+        <span>{{ tmpl.emoji }}</span>
+        <span>{{ tmpl.name }}</span>
+        <span class="tmpl-badge-change">변경</span>
+      </a>
     </div>
 
     <div class="form-group">

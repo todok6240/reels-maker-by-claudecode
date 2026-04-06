@@ -69,6 +69,49 @@ google_oauth = oauth.register(
 
 ADMIN_EMAILS = {"todok6240@gmail.com"}
 
+TEMPLATES = {
+    "food": {
+        "name": "맛집/카페",
+        "emoji": "🍜",
+        "desc": "음식, 카페, 맛집 방문 후기",
+        "gradient": "linear-gradient(135deg, #ff6b6b, #ee0979)",
+        "accent": "#E52828",
+        "visual": {"accent_color": [220, 40, 40], "text_position": "top", "overlay_opacity": 210},
+    },
+    "travel": {
+        "name": "여행/관광",
+        "emoji": "✈️",
+        "desc": "여행지, 관광명소, 풍경 기록",
+        "gradient": "linear-gradient(135deg, #667eea, #764ba2)",
+        "accent": "#667eea",
+        "visual": {"accent_color": [102, 126, 234], "text_position": "bottom", "overlay_opacity": 200},
+    },
+    "product": {
+        "name": "상품 리뷰",
+        "emoji": "🛍️",
+        "desc": "제품, 쇼핑, 언박싱 리뷰",
+        "gradient": "linear-gradient(135deg, #a18cd1, #fbc2eb)",
+        "accent": "#7B2FBE",
+        "visual": {"accent_color": [123, 47, 190], "text_position": "top", "overlay_opacity": 200},
+    },
+    "fitness": {
+        "name": "운동/헬스",
+        "emoji": "💪",
+        "desc": "헬스장, 운동 루틴, 다이어트",
+        "gradient": "linear-gradient(135deg, #f7971e, #ffd200)",
+        "accent": "#E56A00",
+        "visual": {"accent_color": [229, 106, 0], "text_position": "top", "overlay_opacity": 210},
+    },
+    "vlog": {
+        "name": "일상/브이로그",
+        "emoji": "🎬",
+        "desc": "일상, 감성 브이로그, 데일리",
+        "gradient": "linear-gradient(135deg, #11998e, #38ef7d)",
+        "accent": "#1B9E6B",
+        "visual": {"accent_color": [27, 158, 107], "text_position": "bottom", "overlay_opacity": 190},
+    },
+}
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -252,8 +295,17 @@ def settings():
 @app.route("/")
 @login_required
 def index():
+    return render_template("dashboard.html", templates=TEMPLATES)
+
+
+@app.route("/make")
+@login_required
+def make():
+    template_id = request.args.get("t", "food")
+    if template_id not in TEMPLATES:
+        template_id = "food"
     get_session_id()
-    return render_template("index.html")
+    return render_template("index.html", template_id=template_id, tmpl=TEMPLATES[template_id])
 
 
 @app.route("/history")
@@ -517,12 +569,13 @@ def api_make():
 
     ai_captions_raw = _redis.get(f"ai_captions:{sid}")
     ai_captions = json.loads(ai_captions_raw) if ai_captions_raw else None
+    visual = TEMPLATES.get(content_type, TEMPLATES["food"])["visual"]
 
     def run():
         set_progress(sid, {"status": "running", "message": ""})
         try:
             output_path = make_reels(name, location, price, review, analysis, photos, captions,
-                       output_dir=out_dir)
+                       output_dir=out_dir, visual=visual)
             restaurant_id = save_restaurant(user_id, name, location, price, review)
             reel_id = save_reel(restaurant_id, output_path, len(photos), user_id, content_type)
             save_captions(reel_id, photos, captions, ai_captions)

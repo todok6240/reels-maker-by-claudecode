@@ -228,23 +228,7 @@ def fit_image(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
     return img.crop((left, top, left + target_w, top + target_h))
 
 
-def draw_caption(img: Image.Image, text: str) -> Image.Image:
-    """이미지 하단에 그라디언트 페이드 + 자막 추가"""
-    img = img.convert("RGBA")
-    w, h = img.size
-
-    # 상단 35% 영역에 비선형 그라디언트 오버레이 생성
-    grad_h = int(h * 0.35)
-    gradient = np.zeros((h, w, 4), dtype=np.uint8)
-    for y in range(grad_h):
-        alpha = int(210 * ((grad_h - y) / grad_h) ** 1.8)
-        gradient[y, :, 3] = alpha
-
-    overlay = Image.fromarray(gradient, "RGBA")
-    img = Image.alpha_composite(img, overlay)
-
-    draw = ImageDraw.Draw(img)
-
+def _load_font(size: int):
     _base_dir = os.path.dirname(os.path.abspath(__file__))
     font_paths = [
         os.path.join(_base_dir, "static/fonts/esamanru OTF Bold.otf"),
@@ -252,16 +236,47 @@ def draw_caption(img: Image.Image, text: str) -> Image.Image:
         "/System/Library/Fonts/AppleSDGothicNeo.ttc",
         "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
     ]
-    font = None
     for fp in font_paths:
         if os.path.exists(fp):
             try:
-                font = ImageFont.truetype(fp, size=62)
-                break
+                return ImageFont.truetype(fp, size=size)
             except Exception:
                 continue
-    if font is None:
-        font = ImageFont.load_default()
+    return ImageFont.load_default()
+
+
+def draw_caption(img: Image.Image, text: str, visual: dict = None) -> Image.Image:
+    """이미지에 그라디언트 페이드 + 자막 추가. visual 설정으로 위치/스타일 제어."""
+    if visual is None:
+        visual = {}
+    text_position = visual.get("text_position", "top")   # "top" | "bottom"
+    overlay_opacity = visual.get("overlay_opacity", 210)
+    font_size = visual.get("font_size", 62)
+
+    img = img.convert("RGBA")
+    w, h = img.size
+
+    grad_h = int(h * 0.38)
+    gradient = np.zeros((h, w, 4), dtype=np.uint8)
+
+    if text_position == "bottom":
+        # 하단에서 위로 올라오는 그라디언트
+        for y in range(grad_h):
+            alpha = int(overlay_opacity * (y / grad_h) ** 1.8)
+            gradient[h - grad_h + y, :, 3] = alpha
+        text_y_ratio = 0.80
+    else:
+        # 상단에서 아래로 내려오는 그라디언트 (기본)
+        for y in range(grad_h):
+            alpha = int(overlay_opacity * ((grad_h - y) / grad_h) ** 1.8)
+            gradient[y, :, 3] = alpha
+        text_y_ratio = 0.28
+
+    overlay = Image.fromarray(gradient, "RGBA")
+    img = Image.alpha_composite(img, overlay)
+
+    draw = ImageDraw.Draw(img)
+    font = _load_font(font_size)
 
     # 텍스트가 이미지 너비를 넘으면 단어 단위로 줄바꿈
     max_width = int(w * 0.85)
@@ -282,7 +297,7 @@ def draw_caption(img: Image.Image, text: str) -> Image.Image:
     line_h = draw.textbbox((0, 0), "가", font=font)[3]
     line_gap = 10
     total_text_h = len(lines) * line_h + (len(lines) - 1) * line_gap
-    ty_start = int(h * 0.28) - total_text_h // 2  # 상단 30% 영역
+    ty_start = int(h * text_y_ratio) - total_text_h // 2
 
     for i, line in enumerate(lines):
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -290,41 +305,26 @@ def draw_caption(img: Image.Image, text: str) -> Image.Image:
         tx = (w - tw) // 2
         ty = ty_start + i * (line_h + line_gap)
 
-        # 블러 효과 느낌의 소프트 그림자 (여러 겹)
+        # 소프트 그림자
         for offset, alpha in [(6, 60), (4, 100), (2, 140)]:
             draw.text((tx + offset, ty + offset), line, font=font, fill=(0, 0, 0, alpha))
-
-        # 메인 텍스트 (밝은 흰색)
         draw.text((tx, ty), line, font=font, fill=(255, 255, 255, 255))
 
     return img.convert("RGB")
 
 
-def draw_location_badge(img: Image.Image, name: str, location: str) -> Image.Image:
+def draw_location_badge(img: Image.Image, name: str, location: str, visual: dict = None) -> Image.Image:
     """좌측 상단(11시 방향)에 가게 이름 + 위치 뱃지 추가"""
+    if visual is None:
+        visual = {}
+    accent_color = tuple(visual.get("accent_color", [220, 40, 40]))
+
     img = img.convert("RGBA")
     w, h = img.size
     draw = ImageDraw.Draw(img)
 
-    _base_dir = os.path.dirname(os.path.abspath(__file__))
-    font_paths = [
-        os.path.join(_base_dir, "static/fonts/esamanru OTF Bold.otf"),
-        "/Users/hongjuhyeong/Library/Fonts/esamanru OTF Bold.otf",
-        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-        "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-    ]
-    font_name = None
-    font_loc = None
-    for fp in font_paths:
-        if os.path.exists(fp):
-            try:
-                font_name = ImageFont.truetype(fp, size=48)
-                font_loc  = ImageFont.truetype(fp, size=36)
-                break
-            except Exception:
-                continue
-    if font_name is None:
-        font_name = font_loc = ImageFont.load_default()
+    font_name = _load_font(48)
+    font_loc  = _load_font(36)
 
     pad_x, pad_y, line_gap = 28, 20, 10
     margin = int(w * 0.05)
@@ -350,13 +350,13 @@ def draw_location_badge(img: Image.Image, name: str, location: str) -> Image.Ima
     img = Image.alpha_composite(img, badge_layer)
     draw = ImageDraw.Draw(img)
 
-    # 왼쪽 빨간 세로줄
+    # 왼쪽 세로줄 (템플릿 accent 색상)
     bar_w = 6
     bar_margin = 16
     bar_x = badge_x + pad_x
     bar_y1 = badge_y + pad_y
     bar_y2 = badge_y + badge_h - pad_y
-    draw.rectangle([(bar_x, bar_y1), (bar_x + bar_w, bar_y2)], fill=(220, 40, 40, 255))
+    draw.rectangle([(bar_x, bar_y1), (bar_x + bar_w, bar_y2)], fill=(*accent_color, 255))
 
     # 가게 이름 (크게) — 빨간 줄 오른쪽
     tx = bar_x + bar_w + bar_margin
@@ -405,7 +405,7 @@ def get_photos() -> list[str]:
 
 def make_reels(name: str, location: str, price: str, review: str,
                analysis: str, photos: list[str], captions: list[str] = None,
-               output_dir: str = None):
+               output_dir: str = None, visual: dict = None):
     if captions is None:
         print("✍️  자막 생성 중...")
         captions = generate_captions(name, location, price, review, analysis, photos)
@@ -437,14 +437,14 @@ def make_reels(name: str, location: str, price: str, review: str,
             # 동영상 → 30fps×3초 = 90프레임 추출, 각 프레임 1장씩 (총 3초)
             pil_frames = extract_video_frames(media_path, video_frame_count)
             seq = [np.array(
-                draw_location_badge(draw_caption(fit_image(pf, REELS_W, REELS_H), caption), name, location)
+                draw_location_badge(draw_caption(fit_image(pf, REELS_W, REELS_H), caption, visual=visual), name, location, visual=visual)
             ) for pf in pil_frames]
             seg = ImageSequenceClip(seq, fps=fps)
         else:
             img = ImageOps.exif_transpose(Image.open(media_path))
             img = fit_image(img, REELS_W, REELS_H)
-            img = draw_caption(img, caption)
-            img = draw_location_badge(img, name, location)
+            img = draw_caption(img, caption, visual=visual)
+            img = draw_location_badge(img, name, location, visual=visual)
             frame_arr = np.array(img)
             seg = ImageSequenceClip([frame_arr] * hold_frames, fps=fps)
         segments.append(seg)

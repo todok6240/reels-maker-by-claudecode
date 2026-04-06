@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let analysisData = "";
 let photosData = [];
-let contentType = "food";
+let contentType = (typeof window.TEMPLATE_ID !== "undefined" && window.TEMPLATE_ID) ? window.TEMPLATE_ID : "food";
 let sortableInstance = null;
 let step1Locked = false;
 
