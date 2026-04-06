@@ -3,6 +3,13 @@
 맛집 릴스 자동 생성기 - Flask 웹 서버
 """
 
+import sys
+# Windows cp949 환경에서 이모지 출력 시 인코딩 오류 방지
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import os
 import glob
 import uuid
