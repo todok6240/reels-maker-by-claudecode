@@ -36,25 +36,32 @@ def init_db():
             output_path   TEXT,
             photo_count   INTEGER,
             owner_id      TEXT,
+            content_type  TEXT,
             created_at    TEXT DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
         );
 
         CREATE TABLE IF NOT EXISTS captions (
-            id             INTEGER PRIMARY KEY AUTOINCREMENT,
-            reel_id        INTEGER NOT NULL,
-            order_index    INTEGER NOT NULL,
-            photo_filename TEXT,
-            caption_text   TEXT,
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            reel_id          INTEGER NOT NULL,
+            order_index      INTEGER NOT NULL,
+            photo_filename   TEXT,
+            ai_caption_text  TEXT,
+            caption_text     TEXT,
             FOREIGN KEY (reel_id) REFERENCES reels(id)
         );
     """)
-    # 기존 DB에 owner_id 컬럼이 없으면 추가 (마이그레이션)
-    try:
-        conn.execute("ALTER TABLE reels ADD COLUMN owner_id TEXT")
-        conn.commit()
-    except Exception:
-        pass  # 이미 존재하면 무시
+    # 마이그레이션: 누락된 컬럼 추가
+    for migration in [
+        "ALTER TABLE reels ADD COLUMN owner_id TEXT",
+        "ALTER TABLE reels ADD COLUMN content_type TEXT",
+        "ALTER TABLE captions ADD COLUMN ai_caption_text TEXT",
+    ]:
+        try:
+            conn.execute(migration)
+            conn.commit()
+        except Exception:
+            pass  # 이미 존재하면 무시
     conn.commit()
     conn.close()
 
@@ -72,12 +79,12 @@ def save_restaurant(session_id: str, name: str, location: str, price: str, revie
     return rid
 
 
-def save_reel(restaurant_id: int, output_path: str, photo_count: int, owner_id: str = None) -> int:
+def save_reel(restaurant_id: int, output_path: str, photo_count: int, owner_id: str = None, content_type: str = None) -> int:
     """릴스 정보 저장 후 ID 반환"""
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO reels (restaurant_id, output_path, photo_count, owner_id) VALUES (?, ?, ?, ?)",
-        (restaurant_id, output_path, photo_count, owner_id)
+        "INSERT INTO reels (restaurant_id, output_path, photo_count, owner_id, content_type) VALUES (?, ?, ?, ?, ?)",
+        (restaurant_id, output_path, photo_count, owner_id, content_type)
     )
     reel_id = cur.lastrowid
     conn.commit()
@@ -85,14 +92,15 @@ def save_reel(restaurant_id: int, output_path: str, photo_count: int, owner_id: 
     return reel_id
 
 
-def save_captions(reel_id: int, photos: list, captions: list):
-    """자막 목록 저장"""
+def save_captions(reel_id: int, photos: list, captions: list, ai_captions: list = None):
+    """자막 목록 저장. ai_captions가 있으면 AI 원본과 사용자 수정본 모두 저장."""
     import os as _os
     conn = get_conn()
     for i, (photo, caption) in enumerate(zip(photos, captions)):
+        ai_text = ai_captions[i] if ai_captions and i < len(ai_captions) else None
         conn.execute(
-            "INSERT INTO captions (reel_id, order_index, photo_filename, caption_text) VALUES (?, ?, ?, ?)",
-            (reel_id, i + 1, _os.path.basename(photo), caption)
+            "INSERT INTO captions (reel_id, order_index, photo_filename, ai_caption_text, caption_text) VALUES (?, ?, ?, ?, ?)",
+            (reel_id, i + 1, _os.path.basename(photo), ai_text, caption)
         )
     conn.commit()
     conn.close()

@@ -490,6 +490,8 @@ def api_generate():
         photos = [photos[i] for i in order if 0 <= i < len(photos)]
 
     captions = generate_captions(name, location, price, review, analysis, photos, content_type)
+    # AI 원본 자막을 Redis에 보관 (make 단계에서 사용자 수정본과 함께 저장)
+    _redis.setex(f"ai_captions:{sid}", PROGRESS_TTL, json.dumps(captions))
     return jsonify({"captions": captions, "photos": [os.path.basename(p) for p in photos]})
 
 
@@ -513,14 +515,17 @@ def api_make():
 
     out_dir = session_output_dir(sid)
 
+    ai_captions_raw = _redis.get(f"ai_captions:{sid}")
+    ai_captions = json.loads(ai_captions_raw) if ai_captions_raw else None
+
     def run():
         set_progress(sid, {"status": "running", "message": ""})
         try:
             output_path = make_reels(name, location, price, review, analysis, photos, captions,
                        output_dir=out_dir)
             restaurant_id = save_restaurant(user_id, name, location, price, review)
-            reel_id = save_reel(restaurant_id, output_path, len(photos), user_id)
-            save_captions(reel_id, photos, captions)
+            reel_id = save_reel(restaurant_id, output_path, len(photos), user_id, content_type)
+            save_captions(reel_id, photos, captions, ai_captions)
             set_progress(sid, {"status": "done", "message": "", "video_url": f"/stream/{reel_id}", "download_url": f"/download/{reel_id}"})
         except Exception as e:
             logging.error("영상 생성 실패: %s", e, exc_info=True)
@@ -560,7 +565,7 @@ def admin():
     }
     reels = conn.execute("""
         SELECT r.name, r.location, r.price, r.created_at,
-               rl.id AS reel_id, rl.photo_count, rl.owner_id
+               rl.id AS reel_id, rl.photo_count, rl.owner_id, rl.content_type
         FROM restaurants r
         LEFT JOIN reels rl ON rl.restaurant_id = r.id
         ORDER BY r.created_at DESC

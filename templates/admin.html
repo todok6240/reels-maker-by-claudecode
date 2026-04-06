@@ -11,7 +11,7 @@
     </div>
     <div class="card" style="flex:1;min-width:160px;text-align:center;padding:24px">
       <div style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ stats.total_restaurants }}</div>
-      <div style="color:#666;margin-top:4px">총 맛집 수</div>
+      <div style="color:#666;margin-top:4px">총 콘텐츠 수</div>
     </div>
     <div class="card" style="flex:1;min-width:160px;text-align:center;padding:24px">
       <div style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ stats.total_users }}</div>
@@ -27,9 +27,10 @@
         <thead>
           <tr style="border-bottom:2px solid #eee;text-align:left">
             <th style="padding:8px">릴스 ID</th>
-            <th style="padding:8px">가게명</th>
+            <th style="padding:8px">이름</th>
             <th style="padding:8px">위치</th>
             <th style="padding:8px">가격</th>
+            <th style="padding:8px">타입</th>
             <th style="padding:8px">사진수</th>
             <th style="padding:8px">소유자</th>
             <th style="padding:8px">생성일시</th>
@@ -42,12 +43,13 @@
             <td style="padding:8px">{{ r.name }}</td>
             <td style="padding:8px">{{ r.location }}</td>
             <td style="padding:8px">{{ r.price or '-' }}</td>
+            <td style="padding:8px;font-size:0.8rem">{{ r.content_type or 'food' }}</td>
             <td style="padding:8px">{{ r.photo_count or '-' }}</td>
             <td style="padding:8px;font-size:0.8rem;color:#888">{{ r.owner_id or '게스트' }}</td>
             <td style="padding:8px;white-space:nowrap">{{ r.created_at }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="7" style="padding:16px;text-align:center;color:#aaa">데이터 없음</td></tr>
+          <tr><td colspan="8" style="padding:16px;text-align:center;color:#aaa">데이터 없음</td></tr>
           {% endfor %}
         </tbody>
       </table>
