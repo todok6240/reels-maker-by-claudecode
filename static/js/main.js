@@ -291,6 +291,68 @@ function makeSortItem(name, num) {
     updateOrderFromDOM();
   });
 
+  // ── 터치 드래그 (모바일) ──────────────────────────────
+  div.addEventListener("touchstart", e => {
+    if (step1Locked) return;
+    dragSrc = div;
+    const touch = e.touches[0];
+
+    placeholder = document.createElement("div");
+    placeholder.className = "sort-placeholder";
+    placeholder.style.width  = div.offsetWidth  + "px";
+    placeholder.style.height = div.offsetHeight + "px";
+    div.parentNode.insertBefore(placeholder, div);
+
+    div.style.position = "fixed";
+    div.style.zIndex   = "1000";
+    div.style.opacity  = "0.8";
+    div.style.width    = div.offsetWidth + "px";
+    div.style.left     = touch.clientX - div.offsetWidth / 2 + "px";
+    div.style.top      = touch.clientY - div.offsetHeight / 2 + "px";
+    div.style.pointerEvents = "none";
+  }, { passive: true });
+
+  div.addEventListener("touchmove", e => {
+    if (!dragSrc || dragSrc !== div) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+
+    div.style.left = touch.clientX - div.offsetWidth / 2 + "px";
+    div.style.top  = touch.clientY - div.offsetHeight / 2 + "px";
+
+    const zone  = document.getElementById("sort-zone");
+    const items = [...zone.querySelectorAll(".sort-item")].filter(el => el !== div);
+    let inserted = false;
+    for (const item of items) {
+      const rect = item.getBoundingClientRect();
+      if (touch.clientY < rect.top + rect.height / 2) {
+        zone.insertBefore(placeholder, item);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) zone.appendChild(placeholder);
+  }, { passive: false });
+
+  div.addEventListener("touchend", () => {
+    if (!dragSrc || dragSrc !== div) return;
+    div.style.position    = "";
+    div.style.zIndex      = "";
+    div.style.opacity     = "";
+    div.style.width       = "";
+    div.style.left        = "";
+    div.style.top         = "";
+    div.style.pointerEvents = "";
+
+    if (placeholder && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(div, placeholder);
+      placeholder.remove();
+    }
+    placeholder = null;
+    dragSrc = null;
+    updateOrderFromDOM();
+  });
+
   return div;
 }
 
@@ -411,6 +473,13 @@ document.getElementById("btn-generate").addEventListener("click", async () => {
   btn.disabled = true;
 
   try {
+    // 현재 정렬 순서를 서버에 먼저 저장
+    await fetch("/api/photos/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: photosData })
+    });
+
     setGenProgress(1);
     const analyzeRes = await fetch("/api/analyze", { method: "POST" });
     const analyzeData = await analyzeRes.json();
@@ -553,6 +622,9 @@ document.getElementById("btn-clear-all").addEventListener("click", async () => {
   document.getElementById("step2").classList.add("hidden");
   document.getElementById("step3").classList.add("hidden");
   document.getElementById("step4").classList.add("hidden");
+  document.getElementById("generate-progress").classList.add("hidden");
+  document.getElementById("progress-fill").style.width = "0%";
+  document.getElementById("progress-msg").textContent = "";
 });
 
 // ── 초기화 ────────────────────────────────────────────

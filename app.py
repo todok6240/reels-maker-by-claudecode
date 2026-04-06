@@ -138,9 +138,24 @@ def get_session_photos(sid):
     media_exts = ("*.jpg", "*.jpeg", "*.png", "*.heic", "*.heif",
                   "*.mp4", "*.mov", "*.avi", "*.m4v", "*.mkv", "*.3gp",
                   "*.JPG", "*.JPEG", "*.PNG", "*.MP4", "*.MOV")
+    photos_dir = session_photos_dir(sid)
     photos = []
     for ext in media_exts:
-        photos.extend(glob.glob(os.path.join(session_photos_dir(sid), ext)))
+        photos.extend(glob.glob(os.path.join(photos_dir, ext)))
+
+    # Redis에 저장된 순서가 있으면 그 순서대로 반환
+    saved_order_raw = _redis.get(f"photo_order:{sid}")
+    if saved_order_raw:
+        saved_order = json.loads(saved_order_raw)
+        photo_map = {os.path.basename(p): p for p in photos}
+        ordered = [photo_map[name] for name in saved_order if name in photo_map]
+        # 순서에 없는 새 파일은 뒤에 추가
+        ordered_names = set(saved_order)
+        for p in photos:
+            if os.path.basename(p) not in ordered_names:
+                ordered.append(p)
+        return ordered
+
     photos.sort()
     return photos
 
@@ -421,6 +436,15 @@ def api_photos():
     sid = get_session_id()
     photos = get_session_photos(sid)
     return jsonify([os.path.basename(p) for p in photos])
+
+
+@app.route("/api/photos/reorder", methods=["POST"])
+def api_photos_reorder():
+    sid = get_session_id()
+    data = request.json
+    order = data.get("order", [])  # 파일명 배열
+    _redis.setex(f"photo_order:{sid}", PROGRESS_TTL, json.dumps(order))
+    return jsonify({"ok": True})
 
 
 @app.route("/api/analyze", methods=["POST"])
