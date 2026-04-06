@@ -23,6 +23,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import redis
+from database import upsert_user, is_user_allowed, set_user_allowed, list_users
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -124,6 +125,12 @@ def login_required(f):
     def decorated(*args, **kwargs):
         if "user" not in session:
             return redirect(url_for("login"))
+        user = session["user"]
+        # Google 로그인 유저는 is_allowed 확인 (admin은 항상 허용)
+        if user.get("type") == "google":
+            email = user.get("email", "")
+            if email not in ADMIN_EMAILS and not is_user_allowed(user.get("sub", "")):
+                return render_template("login.html", login_bg=None, error="접근 권한이 없습니다. 관리자에게 문의해주세요."), 403
         return f(*args, **kwargs)
     return decorated
 
@@ -279,11 +286,17 @@ def auth_google_callback():
     userinfo = token.get("userinfo")
     if not userinfo:
         return redirect(url_for("login"))
+    google_sub = userinfo.get("sub", "")
+    email      = userinfo.get("email", "")
+    name       = userinfo.get("name", "")
+    picture    = userinfo.get("picture", "")
+    upsert_user(google_sub, email, name, picture)
     session["user"] = {
-        "type": "google",
-        "name": userinfo.get("name", ""),
-        "email": userinfo.get("email", ""),
-        "picture": userinfo.get("picture", ""),
+        "type":    "google",
+        "sub":     google_sub,
+        "name":    name,
+        "email":   email,
+        "picture": picture,
     }
     return redirect(url_for("index"))
 
@@ -577,7 +590,11 @@ def api_make():
 
     ai_captions_raw = _redis.get(f"ai_captions:{sid}")
     ai_captions = json.loads(ai_captions_raw) if ai_captions_raw else None
-    visual = TEMPLATES.get(template_id, TEMPLATES["classic"])["visual"]
+    visual = dict(TEMPLATES.get(template_id, TEMPLATES["classic"])["visual"])
+    caption_y = data.get("caption_y", None)
+    if caption_y is not None:
+        y = max(0.20, min(0.80, int(caption_y) / 100))
+        visual["text_y_ratio"] = y
 
     def run():
         set_progress(sid, {"status": "running", "message": ""})
@@ -618,11 +635,12 @@ def output_file(sid, filename):
 @app.route("/admin")
 @admin_required
 def admin():
-    conn = __import__("database").get_conn()
+    from database import get_conn
+    conn = get_conn()
     stats = {
         "total_reels":       conn.execute("SELECT COUNT(*) FROM reels").fetchone()[0],
         "total_restaurants": conn.execute("SELECT COUNT(*) FROM restaurants").fetchone()[0],
-        "total_users":       conn.execute("SELECT COUNT(DISTINCT owner_id) FROM reels WHERE owner_id NOT LIKE '________-____-____-____-____________'").fetchone()[0],
+        "total_users":       conn.execute("SELECT COUNT(*) FROM users").fetchone()[0],
     }
     reels = conn.execute("""
         SELECT r.name, r.location, r.price, r.created_at,
@@ -633,7 +651,17 @@ def admin():
         LIMIT 100
     """).fetchall()
     conn.close()
-    return render_template("admin.html", stats=stats, reels=[dict(r) for r in reels])
+    users = list_users()
+    return render_template("admin.html", stats=stats, reels=[dict(r) for r in reels], users=users)
+
+
+@app.route("/admin/users/<int:user_id>/toggle", methods=["POST"])
+@admin_required
+def admin_toggle_user(user_id):
+    data = request.json or {}
+    allowed = bool(data.get("allowed", False))
+    set_user_allowed(user_id, allowed)
+    return jsonify({"ok": True, "allowed": allowed})
 
 
 if __name__ == "__main__":

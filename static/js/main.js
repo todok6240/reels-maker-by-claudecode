@@ -16,6 +16,48 @@ let templateId   = (typeof window.TEMPLATE_ID !== "undefined" && window.TEMPLATE
 let sortableInstance = null;
 let step1Locked = false;
 
+// ── 자막 위치 슬라이더 ────────────────────────────────
+const captionYSlider = document.getElementById("caption-y-slider");
+const captionYLabel  = document.getElementById("caption-y-label");
+const PHONE_H = 267; // .tmpl-preview-phone 높이(px)
+
+function updateCaptionPreview(val) {
+  const ratio = val / 100;
+  // 텍스트 바 위치
+  const bar = document.querySelector(".tmpl-preview-text-bar");
+  if (bar) {
+    bar.classList.remove("top", "bottom");
+    bar.style.top    = Math.round(PHONE_H * ratio - 2) + "px";
+    bar.style.bottom = "auto";
+  }
+  // 오버레이 방향
+  const overlay = document.querySelector(".tmpl-preview-overlay");
+  const accent  = (typeof window.TEMPLATE_ACCENT !== "undefined") ? window.TEMPLATE_ACCENT : "#e63946";
+  if (overlay) {
+    overlay.classList.remove("top", "bottom");
+    if (val <= 50) {
+      overlay.style.top    = "0";
+      overlay.style.bottom = "auto";
+      overlay.style.background = `linear-gradient(to bottom, ${accent}cc, transparent)`;
+    } else {
+      overlay.style.bottom = "0";
+      overlay.style.top    = "auto";
+      overlay.style.background = `linear-gradient(to top, ${accent}cc, transparent)`;
+    }
+  }
+  // 레이블
+  if (captionYLabel) {
+    if (val <= 35)      captionYLabel.textContent = "위쪽";
+    else if (val <= 55) captionYLabel.textContent = "중간";
+    else                captionYLabel.textContent = "아래쪽";
+  }
+}
+
+if (captionYSlider) {
+  captionYSlider.addEventListener("input", () => updateCaptionPreview(parseInt(captionYSlider.value)));
+  updateCaptionPreview(parseInt(captionYSlider.value));
+}
+
 function lockStep1() {
   step1Locked = true;
   document.getElementById("btn-clear-all").style.display = "none";
@@ -452,6 +494,7 @@ document.getElementById("btn-make").addEventListener("click", async () => {
   lockStep3();
   const captions = [...document.querySelectorAll(".caption-input")].map(el => el.value);
 
+  const captionY = captionYSlider ? parseInt(captionYSlider.value) : null;
   await fetch("/api/make", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -464,6 +507,7 @@ document.getElementById("btn-make").addEventListener("click", async () => {
       captions:     captions,
       content_type: contentType,
       template_id:  templateId,
+      caption_y:    captionY,
     })
   });
 

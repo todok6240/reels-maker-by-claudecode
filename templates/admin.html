@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="max-width:1000px;margin:32px auto;padding:0 16px">
+<div style="max-width:1400px;margin:32px auto;padding:0 24px;overflow-x:auto">
   <h2 style="margin-bottom:24px">관리자 대시보드</h2>
 
   <!-- 통계 카드 -->
@@ -17,6 +17,52 @@
       <div style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ stats.total_users }}</div>
       <div style="color:#666;margin-top:4px">Google 로그인 유저</div>
     </div>
+  </div>
+
+  <!-- 유저 목록 -->
+  <div class="card" style="padding:24px;margin-bottom:24px">
+    <h3 style="margin-bottom:16px">유저 접근 관리</h3>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:0.9rem;min-width:600px">
+      <thead>
+        <tr style="border-bottom:2px solid #eee;text-align:left">
+          <th style="padding:8px">프로필</th>
+          <th style="padding:8px">이름</th>
+          <th style="padding:8px">이메일</th>
+          <th style="padding:8px">가입일</th>
+          <th style="padding:8px">최근 로그인</th>
+          <th style="padding:8px;text-align:center">접근 허용</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr style="border-bottom:1px solid #f0f0f0" id="user-row-{{ u.id }}">
+          <td style="padding:8px">
+            {% if u.picture %}
+            <img src="{{ u.picture }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+            {% else %}
+            <div style="width:32px;height:32px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#888">{{ u.name[0] | upper }}</div>
+            {% endif %}
+          </td>
+          <td style="padding:8px;font-weight:500">{{ u.name }}</td>
+          <td style="padding:8px;color:#666;font-size:0.85rem">{{ u.email }}</td>
+          <td style="padding:8px;color:#aaa;font-size:0.8rem;white-space:nowrap">{{ u.created_at }}</td>
+          <td style="padding:8px;color:#aaa;font-size:0.8rem;white-space:nowrap">{{ u.last_login }}</td>
+          <td style="padding:8px;text-align:center">
+            <label class="toggle-switch">
+              <input type="checkbox" class="user-toggle"
+                     data-id="{{ u.id }}"
+                     {% if u.is_allowed %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="padding:16px;text-align:center;color:#aaa">유저 없음</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   </div>
 
   <!-- 릴스 목록 -->
@@ -56,4 +102,38 @@
     </div>
   </div>
 </div>
+
+<style>
+.toggle-switch { position:relative; display:inline-block; width:44px; height:24px; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider {
+  position:absolute; cursor:pointer; inset:0;
+  background:#ccc; border-radius:24px; transition:.2s;
+}
+.toggle-slider::before {
+  content:""; position:absolute;
+  height:18px; width:18px; left:3px; bottom:3px;
+  background:#fff; border-radius:50%; transition:.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background:var(--color-primary); }
+.toggle-switch input:checked + .toggle-slider::before { transform:translateX(20px); }
+</style>
+
+<script>
+document.querySelectorAll(".user-toggle").forEach(cb => {
+  cb.addEventListener("change", async () => {
+    const id = cb.dataset.id;
+    const allowed = cb.checked;
+    const res = await fetch(`/admin/users/${id}/toggle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ allowed })
+    });
+    if (!res.ok) {
+      alert("변경 실패");
+      cb.checked = !allowed;
+    }
+  });
+});
+</script>
 {% endblock %}

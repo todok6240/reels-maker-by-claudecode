@@ -6,6 +6,7 @@ SQLite 데이터베이스 관리
 import sqlite3
 import os
 from datetime import datetime
+from crypto import encrypt, decrypt
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reels.db")
 
@@ -49,6 +50,17 @@ def init_db():
             ai_caption_text  TEXT,
             caption_text     TEXT,
             FOREIGN KEY (reel_id) REFERENCES reels(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            google_sub TEXT UNIQUE NOT NULL,
+            email_enc  TEXT NOT NULL,
+            name_enc   TEXT NOT NULL,
+            picture    TEXT,
+            is_allowed INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            last_login TEXT DEFAULT (datetime('now', 'localtime'))
         );
     """)
     # 마이그레이션: 누락된 컬럼 추가
@@ -151,3 +163,65 @@ def get_reel_owner(reel_id: int) -> str:
     row = conn.execute("SELECT owner_id FROM reels WHERE id = ?", (reel_id,)).fetchone()
     conn.close()
     return row["owner_id"] if row else None
+
+
+# ── users 테이블 ──────────────────────────────────────
+
+def upsert_user(google_sub: str, email: str, name: str, picture: str):
+    """Google 로그인 시 유저 등록 또는 last_login 갱신"""
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT id FROM users WHERE google_sub = ?", (google_sub,)
+    ).fetchone()
+    if existing:
+        conn.execute(
+            "UPDATE users SET last_login = datetime('now','localtime'), picture = ? WHERE google_sub = ?",
+            (picture, google_sub)
+        )
+    else:
+        conn.execute(
+            "INSERT INTO users (google_sub, email_enc, name_enc, picture, is_allowed) VALUES (?, ?, ?, ?, 0)",
+            (google_sub, encrypt(email), encrypt(name), picture)
+        )
+    conn.commit()
+    conn.close()
+
+
+def is_user_allowed(google_sub: str) -> bool:
+    """유저가 허용 상태인지 확인"""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT is_allowed FROM users WHERE google_sub = ?", (google_sub,)
+    ).fetchone()
+    conn.close()
+    return bool(row["is_allowed"]) if row else False
+
+
+def set_user_allowed(user_id: int, allowed: bool):
+    """유저 허용 상태 변경"""
+    conn = get_conn()
+    conn.execute("UPDATE users SET is_allowed = ? WHERE id = ?", (1 if allowed else 0, user_id))
+    conn.commit()
+    conn.close()
+
+
+def list_users() -> list:
+    """모든 유저 목록 반환 (복호화 포함)"""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, google_sub, email_enc, name_enc, picture, is_allowed, created_at, last_login FROM users ORDER BY created_at DESC"
+    ).fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        result.append({
+            "id":         r["id"],
+            "google_sub": r["google_sub"],
+            "email":      decrypt(r["email_enc"]),
+            "name":       decrypt(r["name_enc"]),
+            "picture":    r["picture"],
+            "is_allowed": r["is_allowed"],
+            "created_at": r["created_at"],
+            "last_login": r["last_login"],
+        })
+    return result

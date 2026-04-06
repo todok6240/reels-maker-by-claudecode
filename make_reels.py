@@ -256,6 +256,16 @@ def draw_caption(img: Image.Image, text: str, visual: dict = None) -> Image.Imag
     img = img.convert("RGBA")
     w, h = img.size
 
+    # 커스텀 y 위치 (슬라이더에서 전달, 0.20~0.80)
+    custom_y = visual.get("text_y_ratio", None)
+    if custom_y is not None:
+        text_y_ratio = float(custom_y)
+        text_position = "bottom" if text_y_ratio > 0.5 else "top"
+    elif text_position == "bottom":
+        text_y_ratio = 0.80
+    else:
+        text_y_ratio = 0.28
+
     grad_h = int(h * 0.38)
     gradient = np.zeros((h, w, 4), dtype=np.uint8)
 
@@ -264,13 +274,11 @@ def draw_caption(img: Image.Image, text: str, visual: dict = None) -> Image.Imag
         for y in range(grad_h):
             alpha = int(overlay_opacity * (y / grad_h) ** 1.8)
             gradient[h - grad_h + y, :, 3] = alpha
-        text_y_ratio = 0.80
     else:
         # 상단에서 아래로 내려오는 그라디언트 (기본)
         for y in range(grad_h):
             alpha = int(overlay_opacity * ((grad_h - y) / grad_h) ** 1.8)
             gradient[y, :, 3] = alpha
-        text_y_ratio = 0.28
 
     overlay = Image.fromarray(gradient, "RGBA")
     img = Image.alpha_composite(img, overlay)

@@ -32,12 +32,22 @@
   </div>
   <div class="tmpl-preview-meta">
     <div class="tmpl-preview-meta-row">
-      <span class="tmpl-preview-meta-label">자막 위치</span>
-      <span class="tmpl-preview-meta-val">{{ '상단' if tmpl.visual.text_position == 'top' else '하단' }}</span>
-    </div>
-    <div class="tmpl-preview-meta-row">
       <span class="tmpl-preview-meta-label">포인트</span>
       <span class="tmpl-preview-swatch" style="background: {{ tmpl.accent }}"></span>
+    </div>
+  </div>
+  <!-- 자막 위치 슬라이더 -->
+  <div class="caption-y-wrap">
+    <div class="caption-y-header">
+      <span class="tmpl-preview-meta-label">자막 위치</span>
+      <span id="caption-y-label" style="font-size:0.75rem;font-weight:600;color:var(--color-primary)"></span>
+    </div>
+    <input type="range" id="caption-y-slider"
+           min="20" max="80" step="1"
+           value="{{ 28 if tmpl.visual.text_position == 'top' else 80 }}">
+    <div class="caption-y-ends">
+      <span>위</span>
+      <span>아래</span>
     </div>
   </div>
 </div>

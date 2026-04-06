@@ -690,7 +690,7 @@ nav {
   position: fixed;
   top: 90px;
   right: 28px;
-  width: 150px;
+  width: 225px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -714,8 +714,8 @@ nav {
 }
 
 .tmpl-preview-phone {
-  width: 100px;
-  height: 178px;
+  width: 150px;
+  height: 267px;
   border-radius: 12px;
   background: #d0d0d0;
   padding: 4px;
@@ -807,6 +807,32 @@ nav {
   height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+/* ── 자막 위치 슬라이더 ────────────────────────────────── */
+.caption-y-wrap {
+  padding: 8px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.caption-y-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+}
+.caption-y-wrap input[type=range] {
+  width: 100%;
+  height: 4px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.caption-y-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: #bbb;
 }
 
 /* ── 대시보드 ─────────────────────────────────────────── */

@@ -37,6 +37,12 @@
         <h1 class="login-title">rsMaker</h1>
         <p class="login-sub" data-i18n="login.subtitle">사진으로 릴스를 자동으로 만들어보세요</p>
 
+        {% if error %}
+        <div style="background:#fff0f0;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:8px;padding:10px 14px;font-size:0.88rem;margin-bottom:16px;">
+          {{ error }}
+        </div>
+        {% endif %}
+
         <div class="login-actions">
           <a href="/auth/google" class="btn-login btn-google">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
