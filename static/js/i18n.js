@@ -2,6 +2,23 @@
 
 const TRANSLATIONS = {
   ko: {
+    // Dashboard
+    'dash.title': '어떤 콘텐츠를 만들까요?',
+    'dash.sub': '템플릿을 선택하면 AI가 맞춤 자막과 영상을 만들어줘요',
+    'dash.cta': '시작하기 →',
+
+    // Templates
+    'tmpl.classic.name': '클래식',
+    'tmpl.classic.desc': '상단 자막 · 레드 포인트\n정통 SNS 릴스 스타일',
+    'tmpl.modern.name': '모던',
+    'tmpl.modern.desc': '하단 자막 · 블루 포인트\n감성적인 라이프스타일 스타일',
+    'tmpl.elegant.name': '엘레강스',
+    'tmpl.elegant.desc': '상단 자막 · 퍼플 포인트\n고급스럽고 세련된 스타일',
+    'tmpl.energy.name': '에너지',
+    'tmpl.energy.desc': '상단 자막 · 오렌지 포인트\n강렬하고 역동적인 스타일',
+    'tmpl.fresh.name': '프레시',
+    'tmpl.fresh.desc': '하단 자막 · 그린 포인트\n자연스럽고 청량한 스타일',
+
     // Nav
     'nav.history': '과거 생성 히스토리',
     'nav.settings': '⚙️ 설정',
@@ -109,6 +126,23 @@ const TRANSLATIONS = {
   },
 
   en: {
+    // Dashboard
+    'dash.title': 'What would you like to create?',
+    'dash.sub': 'Pick a template and AI will generate captions & video for you',
+    'dash.cta': 'Start →',
+
+    // Templates
+    'tmpl.classic.name': 'Classic',
+    'tmpl.classic.desc': 'Top caption · Red accent\nAuthentic SNS reels style',
+    'tmpl.modern.name': 'Modern',
+    'tmpl.modern.desc': 'Bottom caption · Blue accent\nLifestyle aesthetic style',
+    'tmpl.elegant.name': 'Elegant',
+    'tmpl.elegant.desc': 'Top caption · Purple accent\nSophisticated & refined style',
+    'tmpl.energy.name': 'Energy',
+    'tmpl.energy.desc': 'Top caption · Orange accent\nBold & dynamic style',
+    'tmpl.fresh.name': 'Fresh',
+    'tmpl.fresh.desc': 'Bottom caption · Green accent\nNatural & refreshing style',
+
     'nav.history': 'History',
     'nav.settings': '⚙️ Settings',
     'nav.logout': 'Logout',
@@ -204,6 +238,23 @@ const TRANSLATIONS = {
   },
 
   ja: {
+    // Dashboard
+    'dash.title': 'どんなコンテンツを作りますか？',
+    'dash.sub': 'テンプレートを選ぶとAIが字幕と動画を自動で作成します',
+    'dash.cta': '始める →',
+
+    // Templates
+    'tmpl.classic.name': 'クラシック',
+    'tmpl.classic.desc': '上部字幕 · レッドアクセント\n定番SNSリールスタイル',
+    'tmpl.modern.name': 'モダン',
+    'tmpl.modern.desc': '下部字幕 · ブルーアクセント\nライフスタイル美的スタイル',
+    'tmpl.elegant.name': 'エレガント',
+    'tmpl.elegant.desc': '上部字幕 · パープルアクセント\n上品で洗練されたスタイル',
+    'tmpl.energy.name': 'エナジー',
+    'tmpl.energy.desc': '上部字幕 · オレンジアクセント\nダイナミックで力強いスタイル',
+    'tmpl.fresh.name': 'フレッシュ',
+    'tmpl.fresh.desc': '下部字幕 · グリーンアクセント\n自然で爽やかなスタイル',
+
     'nav.history': '過去の生成履歴',
     'nav.settings': '⚙️ 設定',
     'nav.logout': 'ログアウト',

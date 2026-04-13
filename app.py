@@ -23,7 +23,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import redis
-from database import upsert_user, is_user_allowed, set_user_allowed, list_users
+from database import upsert_user, is_user_allowed, set_user_allowed, list_users, log_admin_access, list_admin_access_log
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -138,8 +138,13 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         user = session.get("user")
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+        ua = request.headers.get("User-Agent", "")
+        email = user.get("email", "") if user else ""
         if not user or user.get("email") not in ADMIN_EMAILS:
+            log_admin_access(ip, ua, email, "denied")
             abort(403)
+        log_admin_access(ip, ua, email, "allowed")
         return f(*args, **kwargs)
     return decorated
 
@@ -653,6 +658,13 @@ def admin():
     conn.close()
     users = list_users()
     return render_template("admin.html", stats=stats, reels=[dict(r) for r in reels], users=users)
+
+
+@app.route("/admin/access-log")
+@admin_required
+def admin_access_log():
+    logs = list_admin_access_log()
+    return render_template("admin_access_log.html", logs=logs)
 
 
 @app.route("/admin/users/<int:user_id>/toggle", methods=["POST"])

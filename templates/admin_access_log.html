@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:1200px;margin:32px auto;padding:0 24px">
+
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+    <a href="/admin" style="display:inline-flex;align-items:center;gap:6px;color:#666;text-decoration:none;font-size:0.9rem;padding:6px 12px;border:1px solid #e0e0e0;border-radius:8px;background:#fff">
+      ← 대시보드
+    </a>
+    <h2 style="margin:0">관리자 접근 로그</h2>
+    <span style="margin-left:auto;font-size:0.85rem;color:#aaa">최근 200건</span>
+  </div>
+
+  <!-- 요약 카드 -->
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    {% set denied = logs | selectattr('result', 'equalto', 'denied') | list %}
+    {% set allowed = logs | selectattr('result', 'equalto', 'allowed') | list %}
+    {% set denied_ips = denied | map(attribute='ip') | unique | list %}
+    <div class="card" style="flex:1;min-width:140px;text-align:center;padding:20px">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--color-primary)">{{ logs | length }}</div>
+      <div style="color:#666;margin-top:4px;font-size:0.85rem">전체 시도</div>
+    </div>
+    <div class="card" style="flex:1;min-width:140px;text-align:center;padding:20px">
+      <div style="font-size:1.8rem;font-weight:700;color:#e63946">{{ denied | length }}</div>
+      <div style="color:#666;margin-top:4px;font-size:0.85rem">차단된 접근</div>
+    </div>
+    <div class="card" style="flex:1;min-width:140px;text-align:center;padding:20px">
+      <div style="font-size:1.8rem;font-weight:700;color:#e63946">{{ denied_ips | length }}</div>
+      <div style="color:#666;margin-top:4px;font-size:0.85rem">차단된 고유 IP</div>
+    </div>
+    <div class="card" style="flex:1;min-width:140px;text-align:center;padding:20px">
+      <div style="font-size:1.8rem;font-weight:700;color:#2a9d8f">{{ allowed | length }}</div>
+      <div style="color:#666;margin-top:4px;font-size:0.85rem">정상 접근</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:24px">
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:0.88rem">
+        <thead>
+          <tr style="border-bottom:2px solid #eee;text-align:left">
+            <th style="padding:8px 12px">시각</th>
+            <th style="padding:8px 12px">IP</th>
+            <th style="padding:8px 12px">결과</th>
+            <th style="padding:8px 12px">이메일</th>
+            <th style="padding:8px 12px">User-Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr style="border-bottom:1px solid #f0f0f0;{% if log.result == 'denied' %}background:#fff8f8{% endif %}">
+            <td style="padding:8px 12px;white-space:nowrap;color:#aaa;font-size:0.8rem">{{ log.created_at }}</td>
+            <td style="padding:8px 12px;font-family:monospace;font-weight:600;{% if log.result == 'denied' %}color:#e63946{% endif %}">{{ log.ip }}</td>
+            <td style="padding:8px 12px">
+              {% if log.result == 'denied' %}
+              <span style="background:#fff0f0;color:#e63946;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:600">차단</span>
+              {% else %}
+              <span style="background:#f0faf8;color:#2a9d8f;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:600">허용</span>
+              {% endif %}
+            </td>
+            <td style="padding:8px 12px;color:#666;font-size:0.82rem">{{ log.user_email or '-' }}</td>
+            <td style="padding:8px 12px;color:#aaa;font-size:0.78rem;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ log.user_agent }}">{{ log.user_agent or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="padding:24px;text-align:center;color:#aaa">기록 없음</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

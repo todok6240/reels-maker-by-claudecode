@@ -62,6 +62,15 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now', 'localtime')),
             last_login TEXT DEFAULT (datetime('now', 'localtime'))
         );
+
+        CREATE TABLE IF NOT EXISTS admin_access_log (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip         TEXT NOT NULL,
+            user_agent TEXT,
+            user_email TEXT,
+            result     TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        );
     """)
     # 마이그레이션: 누락된 컬럼 추가
     for migration in [
@@ -203,6 +212,27 @@ def set_user_allowed(user_id: int, allowed: bool):
     conn.execute("UPDATE users SET is_allowed = ? WHERE id = ?", (1 if allowed else 0, user_id))
     conn.commit()
     conn.close()
+
+
+def log_admin_access(ip: str, user_agent: str, user_email: str, result: str):
+    """관리자 페이지 접근 시도 기록"""
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO admin_access_log (ip, user_agent, user_email, result) VALUES (?, ?, ?, ?)",
+        (ip, user_agent, user_email, result)
+    )
+    conn.commit()
+    conn.close()
+
+
+def list_admin_access_log() -> list:
+    """관리자 접근 로그 반환 (최근 200건)"""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, ip, user_agent, user_email, result, created_at FROM admin_access_log ORDER BY created_at DESC LIMIT 200"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def list_users() -> list:

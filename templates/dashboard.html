@@ -4,8 +4,8 @@
 <div class="dashboard-wrap">
 
   <div class="dashboard-hero">
-    <h1 class="dashboard-title">어떤 콘텐츠를 만들까요?</h1>
-    <p class="dashboard-sub">템플릿을 선택하면 AI가 맞춤 자막과 영상을 만들어줘요</p>
+    <h1 class="dashboard-title" data-i18n="dash.title">어떤 콘텐츠를 만들까요?</h1>
+    <p class="dashboard-sub" data-i18n="dash.sub">템플릿을 선택하면 AI가 맞춤 자막과 영상을 만들어줘요</p>
   </div>
 
   <div class="tmpl-grid">
@@ -15,9 +15,9 @@
         <span class="tmpl-emoji">{{ tmpl.emoji }}</span>
       </div>
       <div class="tmpl-card-body">
-        <div class="tmpl-name">{{ tmpl.name }}</div>
-        <div class="tmpl-desc">{{ tmpl.desc }}</div>
-        <div class="tmpl-cta" style="color: {{ tmpl.accent }}">시작하기 →</div>
+        <div class="tmpl-name" data-i18n="tmpl.{{ tid }}.name">{{ tmpl.name }}</div>
+        <div class="tmpl-desc" data-i18n="tmpl.{{ tid }}.desc">{{ tmpl.desc }}</div>
+        <div class="tmpl-cta" style="color: {{ tmpl.accent }}" data-i18n="dash.cta">시작하기 →</div>
       </div>
     </a>
     {% endfor %}

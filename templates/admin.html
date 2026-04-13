@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <div style="max-width:1400px;margin:32px auto;padding:0 24px;overflow-x:auto">
-  <h2 style="margin-bottom:24px">관리자 대시보드</h2>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <h2 style="margin:0">관리자 대시보드</h2>
+    <a href="/admin/access-log" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--color-primary);color:#fff;border-radius:8px;text-decoration:none;font-size:0.88rem;font-weight:600">
+      🔍 접근 IP 로그
+    </a>
+  </div>
 
   <!-- 통계 카드 -->
   <div style="display:flex;gap:16px;margin-bottom:32px;flex-wrap:wrap">
